@@ -12,24 +12,16 @@
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)](https://developer.mozilla.org/docs/Web/HTML)
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)](https://developer.mozilla.org/docs/Web/CSS)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/docs/Web/JavaScript)
-[![Deploy](https://img.shields.io/badge/Deploy-Vercel-000000?style=flat-square&logo=vercel)](https://vercel.com)
 
 </div>
 
 ---
 
-## 🚪 Duas formas de usar
+## 📋 Sobre o projeto
 
-| | 🌐 Site estático | 💻 Local com banco de dados |
-| --- | --- | --- |
-| **Onde** | Vercel, ou abrindo `public/index.html` | `http://localhost:8082`, na sua máquina |
-| **Branch** | `main` | `feat/banco-de-dados-postgresql` |
-| **Onde ficam os dados** | No navegador de quem usa (`localStorage`) | No banco **PostgreSQL** |
-| **Precisa instalar algo?** | Não | Sim: Java 25 e PostgreSQL ([tutorial abaixo](#-rodando-localmente-com-banco-de-dados)) |
+O **ClinicaVet** roda **localmente**, na sua máquina: um servidor Java (Spring Boot) entrega o site em `http://localhost:8082` e grava tudo em um banco **PostgreSQL**. Qualquer aba ou navegador do computador vê as mesmas consultas.
 
-As duas têm as mesmas telas e as mesmas regras. A diferença é onde os dados ficam: no site estático, cada navegador guarda as suas consultas; na versão local, tudo é gravado no banco de dados e qualquer aba ou navegador vê as mesmas consultas.
-
-> Por enquanto, a versão com banco de dados roda **apenas localmente**. A versão estática para a Vercel é a da branch `main`.
+O projeto começou como um sistema de terminal em Java para praticar **Programação Orientada a Objetos**, que continua em `console-app/` como referência de estudo. Para rodar a versão web, siga o [passo a passo abaixo](#-rodando-localmente).
 
 ---
 
@@ -55,15 +47,7 @@ Agendada ──iniciar atendimento──▶ Em atendimento ──finalizar (paga
 
 ---
 
-## 🌐 Usando o site estático
-
-Na branch `main`, abra `public/index.html` no navegador, ou publique o repositório na Vercel ([vercel.com/new](https://vercel.com/new)): a pasta `public/` é servida como site estático, sem etapa de build.
-
-Os dados ficam salvos só no navegador que você está usando. Em outro navegador ou computador, as consultas não aparecem. O botão **Restaurar dados de exemplo**, no rodapé, apaga tudo e recomeça.
-
----
-
-## 💻 Rodando localmente com banco de dados
+## 💻 Rodando localmente
 
 ### 1. Instale o que precisa
 
@@ -86,12 +70,11 @@ Para conferir o Java, abra um terminal e rode `java -version`. Precisa aparecer 
 > ```
 > Para não precisar repetir em todo terminal, use `setx JAVA_HOME "<o mesmo caminho>"` uma vez e abra um terminal novo.
 
-### 2. Baixe o projeto e entre na branch do banco
+### 2. Baixe o projeto
 
 ```bash
 git clone https://github.com/cauaprs92/ClinicaVetJava.git
 cd ClinicaVetJava
-git checkout feat/banco-de-dados-postgresql
 ```
 
 ### 3. Crie o banco `clinicavet`
@@ -166,7 +149,7 @@ Para desligar o servidor, aperte **Ctrl + C** no terminal. Os dados continuam sa
 
 ---
 
-## 🧱 Como funciona a versão com banco de dados
+## 🧱 Como funciona
 
 ```
 Navegador (public/)            Servidor Java (Spring Boot)                        Banco
