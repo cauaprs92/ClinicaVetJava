@@ -1,0 +1,9 @@
+{
+    "java.project.sourcePaths": ["console-app"],
+    "java.project.outputPath": "console-app/bin",
+    "java.project.referencedLibraries": [
+        "console-app/lib/**/*.jar"
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.compile.nullAnalysis.mode": "automatic"
+}
