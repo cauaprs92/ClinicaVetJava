@@ -35,8 +35,6 @@ O projeto começou como um sistema de terminal em Java para praticar **Programa�
 > ```
 >
 > Quando aparecer `Banco de dados pronto`, acesse **http://localhost:8082**.
->
-> É a primeira vez? Siga antes o [tutorial completo](#-tutorial-como-rodar-localmente), que prepara o Java e o banco.
 
 ---
 
@@ -59,151 +57,6 @@ O projeto começou como um sistema de terminal em Java para praticar **Programa�
 Agendada ──iniciar atendimento──▶ Em atendimento ──finalizar (pagamento da farmácia)──▶ Finalizada
     └──cancelar consulta──▶ (removida)
 ```
-
----
-
-## 💻 Tutorial: como rodar localmente
-
-Passo a passo para Windows. Todos os comandos são digitados no **terminal aberto na pasta do projeto** (veja como abrir no [passo 3](#passo-3--baixe-o-projeto-e-abra-o-terminal-na-pasta-dele)). Os passos 1 a 6 são feitos **uma vez só**; depois, para usar o sistema no dia a dia, basta o [passo 7](#passo-7--rode-o-projeto).
-
-### Passo 1 · Instale os programas
-
-| Programa | Para quê | Onde baixar |
-| --- | --- | --- |
-| **Git** | Baixar o projeto | [git-scm.com](https://git-scm.com/downloads) |
-| **JDK 25** | Rodar o servidor Java | [Adoptium Temurin 25](https://adoptium.net/temurin/releases/?version=25) |
-| **XAMPP** | O banco de dados MySQL | [apachefriends.org](https://www.apachefriends.org/pt_br/index.html) |
-| **MySQL Workbench** (opcional) | Ver as tabelas e rodar os scripts | [dev.mysql.com/downloads/workbench](https://dev.mysql.com/downloads/workbench/) |
-
-No XAMPP, o MySQL usa o usuário `root` **sem senha**, na porta **3306**. Se preferir o [MySQL Community Server](https://dev.mysql.com/downloads/mysql/) em vez do XAMPP, **anote a senha** que você criar para o `root`: ela vai ser usada no passo 6.
-
-### Passo 2 · Aponte o JAVA_HOME para o Java 25
-
-O `mvnw.cmd` usa a variável `JAVA_HOME` para achar o Java. Abra um terminal e veja se ela já existe:
-
-```powershell
-echo $env:JAVA_HOME
-```
-
-Se aparecer o caminho de um JDK 25, pule para o passo 3. Se aparecer vazio, rode o comando abaixo trocando o caminho pela pasta onde o JDK 25 foi instalado:
-
-```powershell
-setx JAVA_HOME "C:\Program Files\Eclipse Adoptium\jdk-25.0.1.8-hotspot"
-```
-
-> 💡 No instalador do Adoptium, a opção **Set JAVA_HOME variable** faz isso por você. E se você usa o VS Code com a extensão **Language Support for Java (Red Hat)**, ela já traz um JDK 25 (ajuste o número da versão da extensão):
-> ```powershell
-> setx JAVA_HOME "$env:USERPROFILE\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64"
-> ```
-
-O `setx` só vale para terminais abertos depois dele: **feche o terminal e abra outro**. No VS Code, feche e abra o **VS Code inteiro**, senão o terminal dele continua sem o `JAVA_HOME`.
-
-### Passo 3 · Baixe o projeto e abra o terminal na pasta dele
-
-```powershell
-git clone https://github.com/cauaprs92/ClinicaVetJava.git
-cd ClinicaVetJava
-```
-
-Para abrir o terminal já na pasta do projeto depois:
-
-- **Pelo Explorador de Arquivos:** abra a pasta `ClinicaVetJava`, clique com o botão direito em um espaço vazio e escolha **Abrir no Terminal**.
-- **Pelo VS Code:** abra a pasta do projeto (*Arquivo → Abrir Pasta…*) e vá em *Terminal → Novo Terminal*.
-
-A pasta certa é a que tem os arquivos `mvnw.cmd` e `pom.xml`.
-
-### Passo 4 · Ligue o MySQL
-
-Abra o **XAMPP Control Panel** e clique em **Start** na linha **MySQL**. Ela fica verde quando o banco está no ar.
-
-> Com o MySQL Community Server não precisa: ele liga sozinho com o Windows (serviço **MySQL80**).
-
-### Passo 5 · Crie o banco `clinicavet`
-
-Os scripts do banco ficam na pasta [`docs/`](docs/). Rode os dois, nesta ordem:
-
-| Arquivo | O que faz |
-| --- | --- |
-| [`docs/codigo.mysql`](docs/codigo.mysql) | Cria o banco `clinicavet` e as tabelas |
-| [`docs/insert.mysql`](docs/insert.mysql) | Insere os 10 horários, os itens da farmácia e consultas de exemplo |
-
-**Pelo terminal**, na pasta do projeto (o `mysql` do XAMPP fica em `C:\xampp\mysql\bin`):
-
-```powershell
-C:\xampp\mysql\bin\mysql -u root -e "source docs/codigo.mysql"
-C:\xampp\mysql\bin\mysql -u root -e "source docs/insert.mysql"
-```
-
-**Ou pelo MySQL Workbench:** conecte no servidor local, vá em *File → Open SQL Script…*, abra o `docs/codigo.mysql` e clique no raio (*Execute*). Depois faça o mesmo com o `docs/insert.mysql`.
-
-> Se você pular este passo, o servidor cria o banco, as tabelas e os dados de exemplo sozinho na primeira vez que iniciar, usando esses mesmos arquivos.
-
-### Passo 6 · Crie o arquivo com a senha do banco
-
-Na pasta do projeto, copie o arquivo de modelo:
-
-```powershell
-copy banco.example.properties banco.properties
-```
-
-**Com o XAMPP, não precisa mudar nada**: o modelo já vem com o `root` sem senha. Com o MySQL Community Server, abra o `banco.properties` e coloque a senha do passo 1 em `clinicavet.bd.senha=`.
-
-```properties
-clinicavet.bd.url=jdbc:mysql://localhost:3306/clinicavet
-clinicavet.bd.usuario=root
-clinicavet.bd.senha=
-```
-
-O `banco.properties` fica fora do git, então sua senha não vai para o GitHub.
-
-### Passo 7 · Rode o projeto
-
-1. Confira se o MySQL está ligado no XAMPP (passo 4).
-2. Abra o **terminal na pasta do projeto** (passo 3).
-3. Rode:
-
-> [!IMPORTANT]
-> ```powershell
-> .\mvnw.cmd spring-boot:run
-> ```
-
-Na primeira vez demora um pouco, porque o Maven baixa as dependências. O servidor está pronto quando aparecer:
-
-```
-Banco de dados pronto em jdbc:mysql://localhost:3306/clinicavet
-```
-
-> No Linux ou macOS, o comando é `./mvnw spring-boot:run`.
-
-### Passo 8 · Abra o site
-
-Acesse **http://localhost:8082**. Tudo o que você fizer fica gravado no MySQL. Dá para ver as tabelas pelo MySQL Workbench ou pelo phpMyAdmin do XAMPP (`http://localhost/phpmyadmin`), no banco `clinicavet`.
-
-O botão **Restaurar dados de exemplo**, no rodapé do site, apaga tudo e roda o `docs/insert.mysql` de novo.
-
-### Para desligar e usar de novo
-
-- **Desligar:** no terminal do servidor, aperte **Ctrl + C**. Depois, se quiser, clique em **Stop** no MySQL do XAMPP. Os dados continuam salvos no banco.
-- **Usar de novo:** ligue o MySQL no XAMPP, abra o terminal na pasta do projeto e rode outra vez `.\mvnw.cmd spring-boot:run`.
-
-> A JavaHotel usa a porta 8081 e a ClinicaVet a 8082, então os dois projetos podem rodar ao mesmo tempo.
-
-### Se algo der errado
-
-| Mensagem | O que fazer |
-| --- | --- |
-| `O termo '.\mvnw.cmd' não é reconhecido` | O terminal não está na pasta do projeto. Abra o terminal na pasta `ClinicaVetJava`, a que tem o `mvnw.cmd` (passo 3). |
-| `Error: JAVA_HOME not found in your environment` | O `JAVA_HOME` não existe. Faça o passo 2 e abra um terminal novo. |
-| `Error: JAVA_HOME is set to an invalid directory` | O `JAVA_HOME` aponta para uma pasta que não existe. Refaça o passo 2 com o caminho certo e abra um terminal novo. |
-| `release version 25 not supported` ou erro de versão do Java | O `JAVA_HOME` aponta para um Java antigo. Refaça o passo 2 com o JDK 25. |
-| `Operador '<' reservado para uso futuro` | O terminal é o PowerShell, que não aceita o `<`. Rode os scripts com `-e "source ..."`, como no passo 5. |
-| *Não foi possível conectar ao MySQL* | O MySQL está desligado. Faça o passo 4. |
-| *O banco de dados não existe* ou *As tabelas do banco de dados não existem* | Rode o `docs/codigo.mysql` (passo 5). |
-| *Usuário ou senha do MySQL incorretos* | Confira a senha no `banco.properties` (passo 6). |
-| `Duplicate entry` ao rodar o `insert.mysql` | Os dados de exemplo já foram inseridos. Para recomeçar, use o botão **Restaurar dados de exemplo** no site. |
-| No XAMPP, o MySQL não liga (*Port 3306 in use*) | Já existe outro MySQL usando a porta 3306. Use esse, ou pare o serviço dele em *Serviços* do Windows. |
-| *Port 8082 was already in use* | O servidor já está rodando em outro terminal. Use esse ou feche ele. |
-| Na página: *Não foi possível carregar os dados do banco de dados* | O servidor não está rodando, ou o banco está com problema. Veja a mensagem no terminal do servidor. |
 
 ---
 
@@ -300,9 +153,9 @@ java -cp console-app Main
 
 ## 👨‍💻 Desenvolvedor
 
-**Matheus Ricardo**
+**Cauã Rodrigo**
 
-GitHub: [@mateusricardodev](https://github.com/mateusricardodev)
+GitHub: [@cauaprs92](https://github.com/cauaprs92)
 
 ---
 
