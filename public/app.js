@@ -1,6 +1,8 @@
 /* ==========================================================
-   ClinicaVet — regras da agenda, das consultas e da farmácia
-   Os dados ficam no localStorage do navegador.
+   ClinicaVet — telas da agenda, das consultas e da farmácia
+   Os dados ficam no banco PostgreSQL. Este arquivo busca tudo pela
+   API do servidor Java (/api/estado) e envia cada alteração para ela;
+   quem valida as regras e grava no banco é o Java (ClinicaService).
    Cada página chama sua função pelo atributo data-page do <body>.
 
    Ciclo de uma consulta:
@@ -14,21 +16,8 @@
 
 const ESTOQUE_REFERENCIA = 20;
 const ESTOQUE_BAIXO = 5;
-const STORAGE_KEY = "clinicavet-estado";
-
-/** Os 10 horários do dia (os mesmos de console-app/AgendaManager.java). */
-const HORARIOS = [
-    { numero: 1, hora: "08:00", turno: "manha" },
-    { numero: 2, hora: "09:00", turno: "manha" },
-    { numero: 3, hora: "10:00", turno: "manha" },
-    { numero: 4, hora: "11:00", turno: "manha" },
-    { numero: 5, hora: "12:00", turno: "manha" },
-    { numero: 6, hora: "14:00", turno: "tarde" },
-    { numero: 7, hora: "15:00", turno: "tarde" },
-    { numero: 8, hora: "16:00", turno: "tarde" },
-    { numero: 9, hora: "17:00", turno: "tarde" },
-    { numero: 10, hora: "18:00", turno: "tarde" },
-];
+const API = "api"; // mesmo endereço do site: http://localhost:8082/api
+const SEM_CONEXAO = "Sem conexão com o servidor da ClinicaVet. Verifique se ele está rodando.";
 
 // As chaves são as gravadas nos dados; os rótulos são o que aparece na tela.
 const STATUS = { agendada: "Agendada", atendimento: "Em atendimento", finalizada: "Finalizada" };
@@ -40,7 +29,6 @@ const CARACTERISTICAS = {
     cachorro: { campo: "porte", rotulo: "Porte", opcoes: ["Pequeno", "Médio", "Grande"] },
     gato: { campo: "temperamento", rotulo: "Temperamento", opcoes: ["Dócil", "Arredio", "Brincalhão"] },
 };
-const IDADE_MAXIMA = 40;
 
 /* ---------- Datas (texto "AAAA-MM-DD", no fuso do navegador) ---------- */
 
@@ -88,40 +76,34 @@ function diaPorExtenso(iso) {
     return maiuscula(formato.format(paraData(iso)));
 }
 
-/* ---------- Estado ---------- */
+/* ---------- Estado (vem do banco de dados) ---------- */
 
-function estadoInicial() {
-    const produtos = [
-        { nomeProduto: "Vacina polivalente", preco: 90.0, quantidade: 15 },
-        { nomeProduto: "Vacina antirrábica", preco: 60.0, quantidade: 20 },
-        { nomeProduto: "Vermífugo", preco: 35.0, quantidade: 18 },
-        { nomeProduto: "Antipulgas", preco: 55.0, quantidade: 12 },
-        { nomeProduto: "Anti-inflamatório", preco: 28.0, quantidade: 16 },
-    ];
-    return { versao: 1, proximoId: 1, consultas: [], produtos };
-}
+/**
+ * Cópia do que está no banco: horários, consultas (com paciente, tutor, código e total
+ * da farmácia) e itens da farmácia. É substituída por inteiro a cada carregarEstado().
+ */
+let estado = { horarios: [], consultas: [], produtos: [] };
 
-/** Código da consulta: número único e sequencial, com 4 dígitos (0001, 0002...). Nunca é reaproveitado. */
-const gerarCodigo = (id) => String(id).padStart(4, "0");
-
-function carregar() {
+/** Busca no servidor tudo o que as páginas mostram. Lança um Error com a mensagem do problema. */
+async function carregarEstado() {
+    let resposta;
     try {
-        const salvo = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        if (salvo && Array.isArray(salvo.consultas) && Array.isArray(salvo.produtos)) return salvo;
-    } catch (e) { /* storage indisponível ou corrompido */ }
-    return estadoInicial();
+        resposta = await fetch(`${API}/estado`, { cache: "no-store" });
+    } catch (e) {
+        throw new Error(SEM_CONEXAO);
+    }
+    const dados = await resposta.json().catch(() => null);
+    if (!resposta.ok || !dados || !Array.isArray(dados.consultas)) {
+        throw new Error((dados && dados.msg) || `O servidor respondeu com erro (${resposta.status}).`);
+    }
+    estado = dados;
 }
-
-function salvar() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(estado)); } catch (e) { /* ignora */ }
-}
-
-let estado = carregar();
 
 /* ---------- Consultas ---------- */
 
 const ativa = (c) => c.status !== "finalizada";
-const horarios = () => HORARIOS;
+/** Os horários do dia, como estão gravados no banco. */
+const horarios = () => estado.horarios;
 const buscarHorario = (n) => horarios().find((h) => h.numero === n) || null;
 const horarioValido = (n) => buscarHorario(n) !== null;
 /** "08:00" */
@@ -241,170 +223,77 @@ function telefoneValido(texto) {
     return /^\([1-9]\d\) (9\d{4}|[2-5]\d{3})-\d{4}$/.test(texto);
 }
 
-/* ---------- Regras ---------- */
+/* ---------- Alterações (enviadas para o servidor Java, que grava no banco) ---------- */
 
-const ok = (msg) => ({ ok: true, msg });
 const erro = (msg) => ({ ok: false, msg });
-const agoraISO = () => new Date().toISOString();
-const centavos = (v) => Math.round(v * 100) / 100;
 
-/** Confere tutor, paciente e sintomas; devolve a mensagem de erro ou null. */
-function erroNosDados({ tutor, paciente, sintomas }) {
-    if (!tutor.nome || !tutor.email || !tutor.telefone) return "Preencha nome, e-mail e telefone do tutor.";
-    if (!/^[^@\s]+@[^@\s]+$/.test(tutor.email)) return "Informe um e-mail válido.";
-    if (!telefoneValido(tutor.telefone)) return ERRO_TELEFONE;
-    if (!paciente.nome) return "Informe o nome do animal.";
-    const c = caracteristicaDe(paciente);
-    if (!c) return "Escolha a espécie do animal: cachorro ou gato.";
-    if (!Number.isInteger(paciente.idade) || paciente.idade < 0 || paciente.idade > IDADE_MAXIMA) {
-        return `Informe a idade do animal, de 0 a ${IDADE_MAXIMA} anos.`;
+/**
+ * Envia uma alteração para a API. O Java confere as regras (horário livre, datas,
+ * estoque...) e grava no PostgreSQL; aqui só mostramos a mensagem que ele devolve.
+ * Sempre que o servidor responde, os dados são recarregados do banco, para a tela
+ * ficar igual ao que está gravado (inclusive mudanças feitas por outra pessoa).
+ * Devolve { ok, msg }.
+ */
+async function enviar(metodo, caminho, corpo) {
+    let resposta;
+    try {
+        resposta = await fetch(`${API}/${caminho}`, {
+            method: metodo,
+            headers: corpo === undefined ? {} : { "Content-Type": "application/json" },
+            body: corpo === undefined ? undefined : JSON.stringify(corpo),
+        });
+    } catch (e) {
+        return erro(SEM_CONEXAO);
     }
-    if (!c.opcoes.includes(paciente[c.campo])) return `Escolha o ${c.rotulo.toLowerCase()} do animal.`;
-    if (!sintomas) return "Descreva os sintomas ou a queixa principal.";
-    return null;
-}
-
-/** Paciente como fica gravado: só a característica da espécie dele, com o tutor junto. */
-function montarPaciente({ tutor, paciente }) {
-    const c = caracteristicaDe(paciente);
-    return {
-        nome: paciente.nome,
-        especie: paciente.especie,
-        idade: paciente.idade,
-        [c.campo]: paciente[c.campo],
-        tutor: { nome: tutor.nome, email: tutor.email, telefone: tutor.telefone },
-    };
+    const dados = await resposta.json().catch(() => null);
+    const resultado = dados && typeof dados.msg === "string"
+        ? { ok: resposta.ok && dados.ok === true, msg: dados.msg }
+        : erro(`O servidor respondeu com erro (${resposta.status}).`);
+    try { await carregarEstado(); } catch (e) { /* a tela atualiza na próxima vez */ }
+    return resultado;
 }
 
 /**
- * Nova consulta com o status Agendada.
+ * Nova consulta com o status Agendada. O telefone é conferido aqui e de novo no servidor.
  * d = { horario, data, sintomas, tutor: { nome, email, telefone }, paciente: { nome, especie, idade, porte | temperamento } }
  */
-function agendar(d) {
-    const problema = erroDeAgendamento(d.data, d.horario);
-    if (problema) return erro(problema);
-    const c = ocupante(d.data, d.horario);
-    if (c) return erro(descreverOcupante(c));
-    const invalido = erroNosDados(d);
-    if (invalido) return erro(invalido);
-    const id = estado.proximoId++;
-    const codigo = gerarCodigo(id);
-    estado.consultas.push({
-        id,
-        codigo,
-        horario: d.horario,
-        data: d.data,
-        status: "agendada",
-        paciente: montarPaciente(d),
-        sintomas: d.sintomas,
-        valorConsumido: 0,
-        criadaEm: agoraISO(),
-        iniciadaEm: null,
-        finalizadaEm: null,
-    });
-    salvar();
-    return ok(`Consulta #${codigo} de ${d.paciente.nome} agendada para ${dataCurta(d.data)} às ${hora(d.horario)}.`);
+async function agendar(d) {
+    if (!telefoneValido(d.tutor.telefone)) return erro(ERRO_TELEFONE);
+    return enviar("POST", "consultas", d);
 }
 
-/** O paciente chegou: só no dia da consulta. */
-function iniciarAtendimento(id) {
-    const c = buscarConsulta(id);
-    if (!c || c.status !== "agendada") return erro("Só consultas agendadas podem iniciar o atendimento.");
-    if (hoje() < c.data) return erro(`O atendimento desta consulta é no dia ${dataCurta(c.data)}.`);
-    if (hoje() > c.data) return erro(`Esta consulta era para ${dataCurta(c.data)}. Remarque a data para atender.`);
-    c.status = "atendimento";
-    c.iniciadaEm = agoraISO();
-    salvar();
-    return ok(`Atendimento da consulta #${c.codigo} iniciado: ${c.paciente.nome} está em atendimento.`);
-}
+/** O paciente chegou: o servidor só aceita no dia da consulta. */
+const iniciarAtendimento = (id) => enviar("POST", `consultas/${id}/iniciar`);
 
-function cancelarConsulta(id) {
-    const c = buscarConsulta(id);
-    if (!c || c.status !== "agendada") return erro("Só consultas agendadas podem ser canceladas.");
-    estado.consultas = estado.consultas.filter((x) => x !== c);
-    salvar();
-    return ok(`Consulta #${c.codigo} cancelada. O horário das ${hora(c.horario)} de ${dataCurta(c.data)} está livre.`);
-}
+const cancelarConsulta = (id) => enviar("DELETE", `consultas/${id}`);
 
-/** Finaliza o atendimento. Com itens da farmácia, exige a confirmação do pagamento. */
-function finalizarConsulta(id, pagamentoConfirmado) {
-    const c = buscarConsulta(id);
-    if (!c || c.status !== "atendimento") return erro("Só consultas em atendimento podem ser finalizadas.");
-    if (c.valorConsumido > 0 && !pagamentoConfirmado) return erro("Confirme o pagamento da farmácia para finalizar.");
-    c.status = "finalizada";
-    c.finalizadaEm = agoraISO();
-    salvar();
-    return ok(`Consulta #${c.codigo} de ${c.paciente.nome} finalizada.`);
-}
+/** Finaliza o atendimento. Com itens da farmácia, o servidor exige a confirmação do pagamento. */
+const finalizarConsulta = (id, pagamentoConfirmado) =>
+    enviar("POST", `consultas/${id}/finalizar`, { pagamentoConfirmado });
 
 /**
  * Atualiza tutor, paciente, sintomas, data e horário. Com o paciente em atendimento,
  * a data e o horário não mudam.
  */
-function editarConsulta(id, d) {
-    const c = buscarConsulta(id);
-    if (!c || !ativa(c)) return erro("Essa consulta não pode mais ser editada.");
-    const emAtendimento = c.status === "atendimento";
-    const data = emAtendimento ? c.data : d.data;
-    const horario = emAtendimento ? c.horario : d.horario;
-    const remarcou = data !== c.data || horario !== c.horario;
-    if (remarcou) {
-        const problema = erroDeAgendamento(data, horario);
-        if (problema) return erro(problema);
-        const o = ocupante(data, horario, c.id);
-        if (o) return erro(descreverOcupante(o));
-    }
-    const invalido = erroNosDados(d);
-    if (invalido) return erro(invalido);
-
-    c.paciente = montarPaciente(d);
-    c.sintomas = d.sintomas;
-    c.data = data;
-    c.horario = horario;
-    salvar();
-    return ok(remarcou
-        ? `Consulta #${c.codigo} remarcada para ${dataCurta(data)} às ${hora(horario)}.`
-        : `Consulta #${c.codigo} atualizada.`);
+async function editarConsulta(id, d) {
+    if (!telefoneValido(d.tutor.telefone)) return erro(ERRO_TELEFONE);
+    return enviar("PUT", `consultas/${id}`, d);
 }
 
 /**
  * Lança vários itens da farmácia de uma vez na consulta em atendimento.
- * itens: [{ indice, quantidade }]. Valida tudo antes; se algo falhar, nada é lançado.
+ * itens: [{ indice, quantidade }], com o índice do item em estado.produtos.
+ * O servidor confere tudo antes; se algo falhar, nada é lançado.
  */
 function registrarConsumo(consultaId, itens) {
-    const c = buscarConsulta(consultaId);
-    if (!c || c.status !== "atendimento") return erro("Escolha uma consulta em atendimento.");
-    const validos = itens.filter((i) => i.quantidade > 0);
-    if (!validos.length) return erro("Adicione pelo menos um item.");
-
-    for (const { indice, quantidade } of validos) {
-        const produto = estado.produtos[indice];
-        if (!produto) return erro("Item inválido.");
-        if (!Number.isInteger(quantidade) || quantidade > produto.quantidade) {
-            return erro(`${produto.nomeProduto}: só há ${produto.quantidade} em estoque.`);
-        }
-    }
-
-    let valor = 0;
-    let unidades = 0;
-    for (const { indice, quantidade } of validos) {
-        const produto = estado.produtos[indice];
-        produto.quantidade -= quantidade;
-        valor += produto.preco * quantidade;
-        unidades += quantidade;
-    }
-    c.valorConsumido = centavos(c.valorConsumido + valor);
-    salvar();
-    const rotulo = unidades === 1 ? "1 item lançado" : `${unidades} itens lançados`;
-    return ok(`${rotulo} na consulta #${c.codigo} (${c.paciente.nome}) · ${brl(valor)}.`);
+    return enviar("POST", "consumos", {
+        consulta: consultaId,
+        itens: itens.map(({ indice, quantidade }) => ({ produtoId: estado.produtos[indice].id, quantidade })),
+    });
 }
 
-/** Apaga as consultas deste navegador e restaura o estoque da farmácia. */
-function redefinirDados() {
-    estado = estadoInicial();
-    salvar();
-    return ok("Dados de exemplo restaurados.");
-}
+/** Apaga consultas, animais e tutores do banco e restaura o estoque da farmácia. */
+const redefinirDados = () => enviar("POST", "redefinir");
 
 /* ---------- Utilidades ---------- */
 
@@ -468,7 +357,7 @@ function avisar(resultado) {
     timerToast = setTimeout(() => toast.classList.remove("visivel"), 3200);
 }
 
-/** Desativa o botão enquanto a ação roda, para ela não ser feita duas vezes. */
+/** Desativa o botão enquanto espera o servidor, para o pedido não ser enviado duas vezes. */
 async function aguardando(botao, acao) {
     botao.disabled = true;
     try {
@@ -478,7 +367,7 @@ async function aguardando(botao, acao) {
     }
 }
 
-/** Liga um formulário a uma ação; limpa o formulário quando dá certo e re-renderiza. */
+/** Liga um formulário a uma ação no servidor; limpa o formulário quando dá certo e re-renderiza. */
 function ligar(form, acao, aoTerminar) {
     const botao = form.querySelector("button[type=submit]");
     let enviando = false;
@@ -1535,16 +1424,29 @@ const paginas = {
     farmacia: paginaFarmacia,
 };
 
-function iniciar() {
+/** Sem dados do banco, a página mostra só o aviso e um botão para tentar de novo. */
+function mostrarFalha(mensagem) {
+    const container = document.querySelector("main .container");
+    for (const filho of container.children) filho.hidden = true;
+    const caixa = el("div", undefined, "vazio falha-conexao");
+    caixa.setAttribute("role", "alert");
+    const tentar = el("button", "Tentar novamente", "botao");
+    tentar.type = "button";
+    tentar.addEventListener("click", () => location.reload());
+    caixa.append(el("p", "Não foi possível carregar os dados do banco de dados.", "falha-titulo"), el("p", mensagem), tentar);
+    container.prepend(caixa);
+}
+
+async function iniciar() {
     document.querySelectorAll(".nav a").forEach((a) => {
         if (a.dataset.nav === document.body.dataset.page) a.setAttribute("aria-current", "page");
     });
 
     const botaoRedefinir = $("redefinir");
     if (botaoRedefinir) {
-        botaoRedefinir.addEventListener("click", () => {
-            if (!confirm("Apagar todas as consultas deste navegador e restaurar o estoque da farmácia?")) return;
-            const r = redefinirDados();
+        botaoRedefinir.addEventListener("click", async () => {
+            if (!confirm("Apagar todas as consultas, animais e tutores do banco de dados e restaurar o estoque da farmácia?")) return;
+            const r = await aguardando(botaoRedefinir, redefinirDados);
             if (r.ok) location.reload();
             else avisar(r);
         });
@@ -1552,13 +1454,21 @@ function iniciar() {
 
     const pagina = paginas[document.body.dataset.page];
     if (!pagina) return;
+    try {
+        await carregarEstado();
+    } catch (e) {
+        mostrarFalha(e.message);
+        return;
+    }
     const redesenhar = pagina();
 
-    // Outra aba mudou os dados: atualiza esta também.
-    window.addEventListener("storage", (ev) => {
-        if (ev.key !== STORAGE_KEY) return;
-        estado = carregar();
-        redesenhar();
+    // Ao voltar para esta aba, busca de novo no banco: outra pessoa pode ter mudado algo.
+    document.addEventListener("visibilitychange", async () => {
+        if (document.visibilityState !== "visible") return;
+        try {
+            await carregarEstado();
+            redesenhar();
+        } catch (e) { /* mantém a tela como está; a próxima ação mostra o erro */ }
     });
 }
 
