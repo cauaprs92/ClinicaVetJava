@@ -27,39 +27,20 @@ O projeto começou como um sistema de terminal em Java para praticar **Programa�
 
 ## ▶️ Para rodar o projeto
 
-O banco fica no **MySQL Server 8.0**, ligado e desligado pelo painel do **XAMPP**.
-
 > [!IMPORTANT]
-> Com o **MySQL ligado** (no painel do XAMPP, botão **Start** do MySQL), abra o **terminal na pasta do projeto** e rode:
+> Com o **MySQL ligado** (no XAMPP, botão **Start**), abra o **terminal na pasta do projeto** e rode:
 >
 > ```powershell
 > .\mvnw.cmd spring-boot:run
 > ```
 >
 > Quando aparecer `Banco de dados pronto`, acesse **http://localhost:8082**.
->
-> Para ver as tabelas, use o botão **Admin** do MySQL no XAMPP (phpMyAdmin).
 
 ### Preparar uma máquina nova
 
-1. Instale o **JDK 25** marcando a opção que configura o `JAVA_HOME`.
-2. Instale o **MySQL Server 8.0** (serviço do Windows `MySQL80`, porta 3306). O projeto usa o usuário `root` sem senha; se o seu tiver senha, coloque-a no `banco.properties` (modelo em `banco.example.properties`).
-3. Instale o **XAMPP** e faça o botão MySQL do painel controlar o MySQL Server 8.0: com o painel fechado, abra o `C:\xampp\xampp-control.ini` **como administrador** e adicione no final:
-
-   ```ini
-   [ServiceNames]
-   MySQL=MySQL80
-   ```
-
-   No painel, **não desmarque a caixa `Svc`** do MySQL: ela remove o serviço do MySQL Server 8.0 do Windows.
-4. Para o phpMyAdmin não mostrar o aviso `Access denied for user 'pma'`, rode no MySQL o script `C:\xampp\phpMyAdmin\sql\create_tables.sql` e depois:
-
-   ```sql
-   CREATE USER 'pma'@'localhost' IDENTIFIED WITH mysql_native_password BY '';
-   GRANT SELECT, INSERT, UPDATE, DELETE ON phpmyadmin.* TO 'pma'@'localhost';
-   ```
-
-O banco `clinicavet` e os dados de exemplo são criados sozinhos na primeira vez que o servidor roda.
+1. Instale o **JDK 25** marcando a opção que configura o `JAVA_HOME`. Sem ela, o comando acima mostra `JAVA_HOME not found`.
+2. Instale o **XAMPP**. Não instale o MySQL Server separado: ele ocupa a porta 3306 e o MySQL do XAMPP não consegue ligar.
+3. Na primeira vez que o servidor rodar, ele cria o banco `clinicavet` e os dados de exemplo sozinho.
 
 ---
 
