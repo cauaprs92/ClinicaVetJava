@@ -1,5 +1,6 @@
 package com.clinica.controller;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -29,6 +30,8 @@ import com.clinica.service.ClinicaService;
  *   POST   /api/consultas/{id}/finalizar  Em atendimento → Finalizada
  *   DELETE /api/consultas/{id}            cancelar consulta agendada
  *   POST   /api/consumos                  lançar itens da farmácia
+ *   POST   /api/produtos                  cadastrar item novo na farmácia
+ *   POST   /api/produtos/{id}/entrada     pôr mais unidades no estoque
  *   POST   /api/redefinir                 restaurar dados de exemplo
  *
  * As alterações respondem { "ok": true, "msg": "..." }. Os erros são tratados em TratadorDeErros.
@@ -48,6 +51,12 @@ public class ClinicaApiController {
     }
 
     public record DadosConsumo(Integer consulta, List<ItemConsumo> itens) {
+    }
+
+    public record DadosProduto(String nome, BigDecimal preco, Integer quantidade) {
+    }
+
+    public record DadosEntrada(Integer quantidade) {
     }
 
     private final ClinicaService clinicaService;
@@ -92,6 +101,17 @@ public class ClinicaApiController {
     @PostMapping("/consumos")
     public Resposta consumo(@RequestBody DadosConsumo d) throws SQLException {
         return Resposta.sucesso(clinicaService.registrarConsumo(d.consulta(), d.itens()));
+    }
+
+    @PostMapping("/produtos")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Resposta cadastrarProduto(@RequestBody DadosProduto d) throws SQLException {
+        return Resposta.sucesso(clinicaService.cadastrarProduto(d.nome(), d.preco(), d.quantidade()));
+    }
+
+    @PostMapping("/produtos/{id}/entrada")
+    public Resposta reporEstoque(@PathVariable int id, @RequestBody DadosEntrada d) throws SQLException {
+        return Resposta.sucesso(clinicaService.reporEstoque(id, d.quantidade()));
     }
 
     @PostMapping("/redefinir")

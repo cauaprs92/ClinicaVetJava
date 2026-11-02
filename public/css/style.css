@@ -1531,6 +1531,35 @@ label.checagem input {
     font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Farmácia: entrada no estoque ---------- */
+
+.form-estoque {
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+}
+
+.form-estoque-titulo {
+    font-size: 1.1rem;
+    margin-bottom: 14px;
+}
+
+.form-estoque-linha {
+    display: flex;
+    gap: 12px;
+}
+
+.form-estoque-linha .campo { flex: 1; min-width: 0; }
+.form-estoque-linha .campo-qtd { flex: 0 0 120px; }
+
+.form-estoque-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.form-estoque-acoes .botao { flex: 1; white-space: nowrap; }
+
 /* ---------- Farmácia: vários itens por lançamento ---------- */
 
 .produtos {

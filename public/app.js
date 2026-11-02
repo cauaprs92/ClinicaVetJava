@@ -292,6 +292,12 @@ function registrarConsumo(consultaId, itens) {
     });
 }
 
+/** Cadastra um item novo na farmácia. d = { nome, preco, quantidade } */
+const cadastrarProduto = (d) => enviar("POST", "produtos", d);
+
+/** Entrada de mercadoria: soma unidades ao estoque de um item que já existe. */
+const reporEstoque = (produtoId, quantidade) => enviar("POST", `produtos/${produtoId}/entrada`, { quantidade });
+
 /** Apaga consultas, animais e tutores do banco e restaura o estoque da farmácia. */
 const redefinirDados = () => enviar("POST", "redefinir");
 
@@ -1258,6 +1264,10 @@ function paginaFarmacia() {
 
     const selAdicionar = $("sel-adicionar");
 
+    const formRepor = $("form-repor");
+    const formNovoItem = $("form-novo-item");
+    const selItemEstoque = $("sel-estoque-item");
+
     // Itens adicionados a este lançamento, na ordem em que foram escolhidos.
     let itens = [];
     let semAtendimento = false;
@@ -1356,6 +1366,55 @@ function paginaFarmacia() {
         atualizarResumo();
     });
 
+    /* ----- Estoque: repor um item da lista ou cadastrar um remédio novo ----- */
+
+    function preencherItensEstoque() {
+        preencherSelect(selItemEstoque,
+            estado.produtos.map((p) => [p.id, `${p.nomeProduto} · ${p.quantidade} un.`]),
+            "Nenhum item cadastrado");
+        formRepor.querySelector("button[type=submit]").disabled = selItemEstoque.disabled;
+    }
+
+    /** Mostra o formulário de repor ou o de remédio novo (um de cada vez). */
+    function mostrarNovoItem(mostrar) {
+        formRepor.hidden = mostrar;
+        formNovoItem.hidden = !mostrar;
+        if (mostrar) formNovoItem.elements.nome.focus();
+    }
+
+    $("abrir-novo-item").addEventListener("click", () => mostrarNovoItem(true));
+    $("cancelar-novo-item").addEventListener("click", () => {
+        formNovoItem.reset();
+        mostrarNovoItem(false);
+    });
+
+    // Depois de repor, continua no mesmo item (o reset do formulário voltaria ao primeiro).
+    let itemReposto = "";
+    formRepor.addEventListener("submit", () => { itemReposto = selItemEstoque.value; });
+    ligar(formRepor,
+        () => reporEstoque(parseInt(selItemEstoque.value, 10), parseInt(formRepor.elements.quantidade.value, 10)),
+        () => {
+            render(); // sem o resultado: os itens que estão sendo lançados na consulta continuam lá
+            if ([...selItemEstoque.options].some((o) => o.value === itemReposto)) selItemEstoque.value = itemReposto;
+        });
+
+    ligar(formNovoItem, () => {
+        const campos = formNovoItem.elements;
+        const preco = campos.preco.value.trim();
+        return cadastrarProduto({
+            nome: campos.nome.value.trim(),
+            preco: preco === "" ? null : Number(preco),
+            quantidade: parseInt(campos.quantidade.value, 10),
+        });
+    }, (resultado) => {
+        render();
+        if (!resultado.ok) return;
+        // Volta para o repor, já com o remédio novo escolhido.
+        const novo = estado.produtos.reduce((a, p) => (!a || p.id > a.id ? p : a), null);
+        if (novo) selItemEstoque.value = String(novo.id);
+        mostrarNovoItem(false);
+    });
+
     function render(resultado) {
         if (resultado && resultado.ok) itens = [];
         // Se o estoque mudou, tira o que esgotou.
@@ -1372,6 +1431,7 @@ function paginaFarmacia() {
         listaProdutos.replaceChildren(...itens.map(cartaoProduto));
         atualizarSeletor();
         atualizarResumo();
+        preencherItensEstoque();
 
         const ul = $("lista-estoque");
         ul.replaceChildren();

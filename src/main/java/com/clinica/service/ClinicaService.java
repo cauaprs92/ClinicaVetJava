@@ -69,6 +69,12 @@ public class ClinicaService {
     private static final int MAX_SINTOMAS = 500;
     private static final int IDADE_MAXIMA = 40;
 
+    // Limites da farmácia (a coluna produto.nome tem 80 caracteres).
+    private static final int MAX_NOME_PRODUTO = 80;
+    private static final BigDecimal PRECO_MAXIMO = new BigDecimal("99999.99");
+    private static final int MAX_ENTRADA = 1000;
+    private static final int MAX_ESTOQUE = 99999;
+
     /** Celular "(11) 90000-0000" (começa com 9) ou fixo "(11) 3000-0000" (começa com 2 a 5), DDD de 11 a 99. */
     private static final Pattern TELEFONE = Pattern.compile("\\([1-9]\\d\\) (9\\d{4}|[2-5]\\d{3})-\\d{4}");
 
@@ -265,6 +271,56 @@ public class ClinicaService {
             String rotulo = unidades == 1 ? "1 item lançado" : unidades + " itens lançados";
             return rotulo + " na consulta #" + c.getCodigo() + " (" + c.getPaciente().getNome() + ") · " + brl(valor) + ".";
         });
+    }
+
+    /** Cadastra um item novo na farmácia, já com o estoque inicial. */
+    public String cadastrarProduto(String nome, BigDecimal preco, Integer quantidade) throws SQLException {
+        return alterar(conexao -> {
+            String texto = texto(nome);
+            if (texto.isEmpty()) throw erro("Informe o nome do item.");
+            if (texto.length() > MAX_NOME_PRODUTO) throw erro("O nome do item pode ter até " + MAX_NOME_PRODUTO + " caracteres.");
+            if (preco == null || preco.signum() < 0 || preco.compareTo(PRECO_MAXIMO) > 0) {
+                throw erro("Informe um preço de R$ 0,00 a " + brl(PRECO_MAXIMO) + ".");
+            }
+            if (preco.stripTrailingZeros().scale() > 2) throw erro("O preço pode ter no máximo 2 casas decimais.");
+            int qtd = validarEntrada(quantidade);
+
+            ProdutoDAO produtos = new ProdutoDAO(conexao);
+            ProdutoFarmacia existente = produtos.buscarPorNome(texto);
+            if (existente != null) {
+                throw erro(existente.getNomeProduto() + " já está no estoque. Escolha o item na lista para repor.");
+            }
+            ProdutoFarmacia produto = new ProdutoFarmacia(0, texto, preco.setScale(2), qtd);
+            produtos.inserir(produto);
+            return produto.getNomeProduto() + " cadastrado com " + unidades(qtd) + " · " + brl(produto.getPreco()) + " cada.";
+        });
+    }
+
+    /** Entrada de mercadoria: soma unidades ao estoque de um item que já existe. */
+    public String reporEstoque(int id, Integer quantidade) throws SQLException {
+        return alterar(conexao -> {
+            ProdutoDAO produtos = new ProdutoDAO(conexao);
+            ProdutoFarmacia produto = produtos.buscarPorId(id);
+            if (produto == null) throw erro("Item inválido.");
+            int qtd = validarEntrada(quantidade);
+            if (produto.getQuantidade() + qtd > MAX_ESTOQUE) {
+                throw erro(produto.getNomeProduto() + ": o estoque pode ter até " + MAX_ESTOQUE + " unidades.");
+            }
+            produtos.reporEstoque(id, qtd);
+            return unidades(qtd) + " de " + produto.getNomeProduto() + " no estoque · agora são "
+                    + (produto.getQuantidade() + qtd) + ".";
+        });
+    }
+
+    private static int validarEntrada(Integer quantidade) {
+        if (quantidade == null || quantidade < 1 || quantidade > MAX_ENTRADA) {
+            throw erro("Informe uma quantidade de 1 a " + MAX_ENTRADA + ".");
+        }
+        return quantidade;
+    }
+
+    private static String unidades(int n) {
+        return n == 1 ? "1 unidade" : n + " unidades";
     }
 
     /* ---------- Dados de exemplo ---------- */

@@ -57,6 +57,7 @@ O projeto começou como um sistema de terminal em Java para praticar **Programa�
 - ✅ Telefone sempre no formato `(11) 90000-0000` (celular) ou `(11) 3000-0000` (fixo)
 - ✅ Buscar consultas pelo código (`#0003`), animal, tutor, telefone ou data, filtrar por status, espécie e farmácia, e ordenar
 - ✅ Lançar várias vacinas e medicamentos de uma vez em uma consulta em atendimento
+- ✅ Dar entrada no estoque da farmácia: repor unidades de um item ou cadastrar um item novo (nome, preço e quantidade)
 - ✅ Ver a agenda de qualquer dia (livre, agendada, em atendimento ou finalizada) e o estoque da farmácia
 
 ```

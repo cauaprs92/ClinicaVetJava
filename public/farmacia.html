@@ -30,7 +30,7 @@
             <header class="cabecalho-pagina">
                 <span class="sobretitulo">Atendimento</span>
                 <h1>Farmácia</h1>
-                <p>Lance as vacinas e os medicamentos usados em cada atendimento. O valor vai direto para a conta da consulta.</p>
+                <p>Lance as vacinas e os medicamentos usados em cada atendimento. O valor vai direto para a conta da consulta. Quando chegar mercadoria, dê entrada no estoque.</p>
             </header>
 
             <div class="grade-2">
@@ -66,6 +66,43 @@
                         <span class="link-sutil" id="total-itens"></span>
                     </div>
                     <p class="descricao">Com 5 unidades ou menos, o item fica em alerta.</p>
+                    <form id="form-repor" class="form-estoque">
+                        <div class="form-estoque-linha">
+                            <div class="campo">
+                                <label for="sel-estoque-item">Item</label>
+                                <select id="sel-estoque-item" name="item" required></select>
+                            </div>
+                            <div class="campo campo-qtd">
+                                <label for="repor-quantidade">Quantidade</label>
+                                <input id="repor-quantidade" type="number" name="quantidade" inputmode="numeric" min="1" max="1000" step="1" placeholder="0" required>
+                            </div>
+                        </div>
+                        <div class="form-estoque-acoes">
+                            <button type="submit" class="botao">Repor estoque</button>
+                            <button type="button" class="botao contorno" id="abrir-novo-item">+ Novo remédio</button>
+                        </div>
+                    </form>
+                    <form id="form-novo-item" class="form-estoque" hidden>
+                        <h3 class="form-estoque-titulo">Novo remédio</h3>
+                        <div class="campo">
+                            <label for="novo-item-nome">Nome</label>
+                            <input id="novo-item-nome" type="text" name="nome" autocomplete="off" maxlength="80" placeholder="Ex.: Antibiótico" required>
+                        </div>
+                        <div class="campos-2">
+                            <div class="campo">
+                                <label for="novo-item-preco">Preço (R$)</label>
+                                <input id="novo-item-preco" type="number" name="preco" inputmode="decimal" min="0" max="99999.99" step="0.01" placeholder="0,00" required>
+                            </div>
+                            <div class="campo">
+                                <label for="novo-item-quantidade">Quantidade inicial</label>
+                                <input id="novo-item-quantidade" type="number" name="quantidade" inputmode="numeric" min="1" max="1000" step="1" placeholder="0" required>
+                            </div>
+                        </div>
+                        <div class="form-estoque-acoes">
+                            <button type="submit" class="botao">Cadastrar remédio</button>
+                            <button type="button" class="botao contorno" id="cancelar-novo-item">Cancelar</button>
+                        </div>
+                    </form>
                     <ul class="estoque" id="lista-estoque"></ul>
                 </section>
             </div>
