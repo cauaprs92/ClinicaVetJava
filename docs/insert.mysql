@@ -1,0 +1,76 @@
+-- ==========================================================
+-- ClinicaVet · dados de exemplo (MySQL)
+--
+-- Rode depois do codigo.mysql, com as tabelas vazias (uma vez só).
+-- O botão "Restaurar dados de exemplo", no rodapé do site, apaga tudo
+-- e roda este arquivo de novo.
+--
+-- As datas das consultas são relativas a hoje (CURDATE()), então a agenda
+-- sempre tem consultas que já passaram, uma hoje e as próximas.
+--
+-- MySQL Workbench: File → Open SQL Script… → este arquivo → raio (Execute)
+-- Terminal:        mysql -u root -p < docs/insert.mysql
+-- ==========================================================
+
+SET NAMES utf8mb4;
+
+USE clinicavet;
+
+-- Os 10 horários do dia: 08:00 a 12:00 de manhã e 14:00 a 18:00 à tarde.
+INSERT INTO horario (numero, hora, turno) VALUES
+    (1,  '08:00', 'manha'),
+    (2,  '09:00', 'manha'),
+    (3,  '10:00', 'manha'),
+    (4,  '11:00', 'manha'),
+    (5,  '12:00', 'manha'),
+    (6,  '14:00', 'tarde'),
+    (7,  '15:00', 'tarde'),
+    (8,  '16:00', 'tarde'),
+    (9,  '17:00', 'tarde'),
+    (10, '18:00', 'tarde');
+
+-- Itens da farmácia. O estoque já desconta o que foi usado nas consultas de exemplo.
+INSERT INTO produto (id, nome, preco, quantidade) VALUES
+    (1, 'Vacina polivalente', 90.00, 14),
+    (2, 'Vacina antirrábica', 60.00, 19),
+    (3, 'Vermífugo',          35.00, 18),
+    (4, 'Antipulgas',         55.00, 11),
+    (5, 'Anti-inflamatório',  28.00, 14);
+
+INSERT INTO tutor (id, nome, email, telefone) VALUES
+    (1, 'João Silva',   'joao@email.com',  '(11) 99999-8888'),
+    (2, 'Maria Souza',  'maria@email.com', '(11) 3222-4444'),
+    (3, 'Carla Mendes', 'carla@email.com', '(21) 98888-7777');
+
+-- Cachorro tem porte; gato tem temperamento.
+INSERT INTO animal (id, tutor_id, nome, especie, idade, porte, temperamento) VALUES
+    (1, 1, 'Rex',    'cachorro', 5, 'Grande', NULL),
+    (2, 2, 'Mingau', 'gato',     3, NULL,     'Arredio'),
+    (3, 3, 'Luna',   'gato',     1, NULL,     'Brincalhão'),
+    (4, 3, 'Thor',   'cachorro', 8, 'Médio',  NULL);
+
+-- Consultas: duas finalizadas, uma hoje e duas agendadas para os próximos dias.
+-- horario: 1 = 08:00, 2 = 09:00, 3 = 10:00, 4 = 11:00, 5 = 12:00,
+--          6 = 14:00, 7 = 15:00, 8 = 16:00, 9 = 17:00, 10 = 18:00
+INSERT INTO consulta (id, horario, data, animal_id, status, sintomas, criada_em, iniciada_em, finalizada_em) VALUES
+    (1, 2, CURDATE() - INTERVAL 7 DAY, 1, 'finalizada', 'Vacinação anual',
+        NOW(3) - INTERVAL 10 DAY,
+        TIMESTAMP(CURDATE() - INTERVAL 7 DAY, '09:05:00'),
+        TIMESTAMP(CURDATE() - INTERVAL 7 DAY, '09:40:00')),
+    (2, 6, CURDATE() - INTERVAL 2 DAY, 2, 'finalizada', 'Vômito desde ontem',
+        NOW(3) - INTERVAL 3 DAY,
+        TIMESTAMP(CURDATE() - INTERVAL 2 DAY, '14:10:00'),
+        TIMESTAMP(CURDATE() - INTERVAL 2 DAY, '14:55:00')),
+    (3, 8, CURDATE(), 4, 'agendada', 'Dor ao andar na pata traseira',
+        NOW(3) - INTERVAL 1 DAY, NULL, NULL),
+    (4, 3, CURDATE() + INTERVAL 1 DAY, 3, 'agendada', 'Primeira consulta e vacinas',
+        NOW(3), NULL, NULL),
+    (5, 2, CURDATE() + INTERVAL 7 DAY, 1, 'agendada', 'Retorno da consulta #0001',
+        NOW(3), NULL, NULL);
+
+-- Itens da farmácia usados nas consultas finalizadas (preço do momento do lançamento).
+INSERT INTO consumo (consulta_id, produto_id, quantidade, preco_unitario, lancado_em) VALUES
+    (1, 1, 1, 90.00, TIMESTAMP(CURDATE() - INTERVAL 7 DAY, '09:20:00')),
+    (1, 2, 1, 60.00, TIMESTAMP(CURDATE() - INTERVAL 7 DAY, '09:22:00')),
+    (2, 5, 2, 28.00, TIMESTAMP(CURDATE() - INTERVAL 2 DAY, '14:30:00')),
+    (2, 4, 1, 55.00, TIMESTAMP(CURDATE() - INTERVAL 2 DAY, '14:32:00'));

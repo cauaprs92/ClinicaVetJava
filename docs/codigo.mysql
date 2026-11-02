@@ -1,0 +1,111 @@
+-- ==========================================================
+-- ClinicaVet · criação do banco de dados (MySQL)
+--
+-- Cria o banco "clinicavet" e as tabelas. Pode rodar mais de uma vez:
+-- só cria o que ainda não existe. Depois, rode o insert.mysql.
+--
+-- MySQL Workbench: File → Open SQL Script… → este arquivo → raio (Execute)
+-- Terminal:        mysql -u root -p < docs/codigo.mysql
+--
+-- Funciona no MySQL 8 e no MySQL do XAMPP (MariaDB 10.4).
+-- ==========================================================
+
+SET NAMES utf8mb4;
+
+CREATE DATABASE IF NOT EXISTS clinicavet
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+USE clinicavet;
+
+-- Os 10 horários da agenda (5 de manhã e 5 à tarde), os mesmos do app de terminal.
+CREATE TABLE IF NOT EXISTS horario (
+    numero  INT        NOT NULL,
+    hora    TIME       NOT NULL,
+    turno   VARCHAR(5) NOT NULL,
+    CONSTRAINT pk_horario PRIMARY KEY (numero),
+    CONSTRAINT uq_horario_hora UNIQUE (hora),
+    CONSTRAINT ck_horario_numero CHECK (numero > 0),
+    CONSTRAINT ck_horario_turno CHECK (turno IN ('manha', 'tarde'))
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- Tutores (donos dos animais). O e-mail identifica a pessoa: uma nova consulta
+-- com o mesmo e-mail reaproveita o cadastro (e atualiza nome e telefone).
+CREATE TABLE IF NOT EXISTS tutor (
+    id        INT          NOT NULL AUTO_INCREMENT,
+    nome      VARCHAR(120) NOT NULL,
+    email     VARCHAR(160) NOT NULL,
+    telefone  VARCHAR(40)  NOT NULL,
+    CONSTRAINT pk_tutor PRIMARY KEY (id),
+    CONSTRAINT uq_tutor_email UNIQUE (email)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- Pacientes. Uma tabela só para as duas espécies (herança "tabela única"):
+-- cachorro tem porte, gato tem temperamento. O mesmo tutor não tem dois
+-- animais com o mesmo nome, então o histórico do paciente fica junto.
+CREATE TABLE IF NOT EXISTS animal (
+    id            INT         NOT NULL AUTO_INCREMENT,
+    tutor_id      INT         NOT NULL,
+    nome          VARCHAR(80) NOT NULL,
+    especie       VARCHAR(10) NOT NULL,
+    idade         INT         NOT NULL,
+    porte         VARCHAR(12) NULL,
+    temperamento  VARCHAR(12) NULL,
+    CONSTRAINT pk_animal PRIMARY KEY (id),
+    CONSTRAINT uq_animal_tutor_nome UNIQUE (tutor_id, nome),
+    CONSTRAINT fk_animal_tutor FOREIGN KEY (tutor_id) REFERENCES tutor (id),
+    CONSTRAINT ck_animal_especie CHECK (especie IN ('cachorro', 'gato')),
+    CONSTRAINT ck_animal_idade CHECK (idade BETWEEN 0 AND 40),
+    CONSTRAINT ck_animal_caracteristica CHECK (
+        (especie = 'cachorro' AND porte IS NOT NULL AND temperamento IS NULL)
+        OR (especie = 'gato' AND temperamento IS NOT NULL AND porte IS NULL)
+    )
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- Consultas. O código mostrado no site (#0001) é o id com 4 dígitos.
+-- Cada horário de cada dia recebe no máximo uma consulta.
+CREATE TABLE IF NOT EXISTS consulta (
+    id             INT          NOT NULL AUTO_INCREMENT,
+    horario        INT          NOT NULL,
+    data           DATE         NOT NULL,
+    animal_id      INT          NOT NULL,
+    status         VARCHAR(12)  NOT NULL DEFAULT 'agendada',
+    sintomas       VARCHAR(500) NOT NULL,
+    criada_em      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    iniciada_em    TIMESTAMP(3) NULL DEFAULT NULL,
+    finalizada_em  TIMESTAMP(3) NULL DEFAULT NULL,
+    CONSTRAINT pk_consulta PRIMARY KEY (id),
+    CONSTRAINT uq_consulta_data_horario UNIQUE (data, horario),
+    CONSTRAINT fk_consulta_horario FOREIGN KEY (horario) REFERENCES horario (numero),
+    CONSTRAINT fk_consulta_animal FOREIGN KEY (animal_id) REFERENCES animal (id),
+    CONSTRAINT ck_consulta_status CHECK (status IN ('agendada', 'atendimento', 'finalizada')),
+    INDEX idx_consulta_status (status)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- Itens da farmácia (vacinas e medicamentos) e o estoque atual.
+CREATE TABLE IF NOT EXISTS produto (
+    id          INT           NOT NULL AUTO_INCREMENT,
+    nome        VARCHAR(80)   NOT NULL,
+    preco       DECIMAL(10,2) NOT NULL,
+    quantidade  INT           NOT NULL,
+    CONSTRAINT pk_produto PRIMARY KEY (id),
+    CONSTRAINT uq_produto_nome UNIQUE (nome),
+    CONSTRAINT ck_produto_preco CHECK (preco >= 0),
+    CONSTRAINT ck_produto_quantidade CHECK (quantidade >= 0)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- Cada item lançado na conta de uma consulta. O preço fica gravado como era
+-- no momento do lançamento. O total da farmácia de uma consulta é a soma destas linhas.
+CREATE TABLE IF NOT EXISTS consumo (
+    id              INT           NOT NULL AUTO_INCREMENT,
+    consulta_id     INT           NOT NULL,
+    produto_id      INT           NOT NULL,
+    quantidade      INT           NOT NULL,
+    preco_unitario  DECIMAL(10,2) NOT NULL,
+    lancado_em      TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    CONSTRAINT pk_consumo PRIMARY KEY (id),
+    CONSTRAINT fk_consumo_consulta FOREIGN KEY (consulta_id) REFERENCES consulta (id) ON DELETE CASCADE,
+    CONSTRAINT fk_consumo_produto FOREIGN KEY (produto_id) REFERENCES produto (id),
+    CONSTRAINT ck_consumo_quantidade CHECK (quantidade > 0),
+    CONSTRAINT ck_consumo_preco CHECK (preco_unitario >= 0)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;

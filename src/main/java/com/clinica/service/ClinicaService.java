@@ -2,8 +2,9 @@ package com.clinica.service;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -70,6 +71,9 @@ public class ClinicaService {
 
     /** Celular "(11) 90000-0000" (começa com 9) ou fixo "(11) 3000-0000" (começa com 2 a 5), DDD de 11 a 99. */
     private static final Pattern TELEFONE = Pattern.compile("\\([1-9]\\d\\) (9\\d{4}|[2-5]\\d{3})-\\d{4}");
+
+    /** Nome da trava do MySQL que deixa uma alteração por vez (veja alterar()). */
+    private static final String TRAVA_ALTERACOES = "clinicavet.alteracoes";
 
     private final ConexaoBD conexaoBD;
     private final InicializadorBD inicializadorBD;
@@ -391,18 +395,38 @@ public class ClinicaService {
     }
 
     /**
-     * Alteração: antes de tudo, trava a tabela de consultas para escrita. Assim, duas pessoas
-     * não conseguem, por exemplo, agendar o mesmo horário ao mesmo tempo; a segunda espera a
-     * primeira terminar e depois vê o horário já ocupado. Leituras continuam liberadas.
+     * Alteração: antes de tudo, pega a trava das alterações (GET_LOCK do MySQL). Assim, duas
+     * pessoas não conseguem, por exemplo, agendar o mesmo horário ao mesmo tempo; a segunda
+     * espera a primeira terminar e depois vê o horário já ocupado. Leituras continuam liberadas.
      */
     private <T> T alterar(TarefaBD<T> tarefa) throws SQLException {
         try (Connection conexao = conexaoBD.conectar()) {
-            return emTransacao(conexao, c -> {
-                try (Statement stmt = c.createStatement()) {
-                    stmt.execute("LOCK TABLE consulta IN EXCLUSIVE MODE");
+            travar(conexao);
+            try {
+                return emTransacao(conexao, tarefa);
+            } finally {
+                liberar(conexao);
+            }
+        }
+    }
+
+    /** Espera até 10 segundos pela trava; se outra alteração demorar mais, desiste. */
+    private static void travar(Connection conexao) throws SQLException {
+        try (PreparedStatement stmt = conexao.prepareStatement("SELECT GET_LOCK(?, ?)")) {
+            stmt.setString(1, TRAVA_ALTERACOES);
+            stmt.setInt(2, 10);
+            try (ResultSet resultado = stmt.executeQuery()) {
+                if (!resultado.next() || resultado.getInt(1) != 1) {
+                    throw erro("O sistema está ocupado com outra alteração. Tente de novo.");
                 }
-                return tarefa.executar(c);
-            });
+            }
+        }
+    }
+
+    private static void liberar(Connection conexao) throws SQLException {
+        try (PreparedStatement stmt = conexao.prepareStatement("SELECT RELEASE_LOCK(?)")) {
+            stmt.setString(1, TRAVA_ALTERACOES);
+            stmt.executeQuery().close();
         }
     }
 

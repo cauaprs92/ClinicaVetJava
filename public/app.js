@@ -1,6 +1,6 @@
 /* ==========================================================
    ClinicaVet — telas da agenda, das consultas e da farmácia
-   Os dados ficam no banco PostgreSQL. Este arquivo busca tudo pela
+   Os dados ficam no banco MySQL. Este arquivo busca tudo pela
    API do servidor Java (/api/estado) e envia cada alteração para ela;
    quem valida as regras e grava no banco é o Java (ClinicaService).
    Cada página chama sua função pelo atributo data-page do <body>.
@@ -229,7 +229,7 @@ const erro = (msg) => ({ ok: false, msg });
 
 /**
  * Envia uma alteração para a API. O Java confere as regras (horário livre, datas,
- * estoque...) e grava no PostgreSQL; aqui só mostramos a mensagem que ele devolve.
+ * estoque...) e grava no MySQL; aqui só mostramos a mensagem que ele devolve.
  * Sempre que o servidor responde, os dados são recarregados do banco, para a tela
  * ficar igual ao que está gravado (inclusive mudanças feitas por outra pessoa).
  * Devolve { ok, msg }.

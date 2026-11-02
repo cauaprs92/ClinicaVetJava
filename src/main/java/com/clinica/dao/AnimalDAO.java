@@ -27,13 +27,12 @@ public class AnimalDAO {
      * espécie, idade e característica: assim as consultas do mesmo paciente ficam juntas.
      */
     public void salvar(Animal animal) throws SQLException {
+        // Mesmo tutor + mesmo nome (chave única): atualiza o animal que já existe.
         String sql = """
                 INSERT INTO animal (tutor_id, nome, especie, idade, porte, temperamento)
                 VALUES (?, ?, ?, ?, ?, ?)
-                ON CONFLICT (tutor_id, nome) DO UPDATE
-                SET especie = EXCLUDED.especie, idade = EXCLUDED.idade,
-                    porte = EXCLUDED.porte, temperamento = EXCLUDED.temperamento
-                RETURNING id
+                ON DUPLICATE KEY UPDATE especie = VALUES(especie), idade = VALUES(idade),
+                                        porte = VALUES(porte), temperamento = VALUES(temperamento)
                 """;
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setInt(1, animal.getTutor().getId());
@@ -43,6 +42,13 @@ public class AnimalDAO {
             // Cada espécie grava a sua característica; a outra coluna fica vazia (NULL).
             stmt.setString(5, animal instanceof Cachorro cachorro ? cachorro.getPorte() : null);
             stmt.setString(6, animal instanceof Gato gato ? gato.getTemperamento() : null);
+            stmt.executeUpdate();
+        }
+        // Novo ou já existente, o id é o do animal com esse nome desse tutor.
+        String busca = "SELECT id FROM animal WHERE tutor_id = ? AND nome = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(busca)) {
+            stmt.setInt(1, animal.getTutor().getId());
+            stmt.setString(2, animal.getNome());
             try (ResultSet resultado = stmt.executeQuery()) {
                 resultado.next();
                 animal.setId(resultado.getInt("id"));

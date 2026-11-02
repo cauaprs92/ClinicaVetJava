@@ -4,10 +4,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,23 +73,19 @@ public class ConsultaDAO {
         }
     }
 
-    /** Grava uma nova consulta e preenche o id e a data de criação. */
+    /** Grava uma nova consulta e preenche o id gerado pelo banco (AUTO_INCREMENT). */
     public void inserir(Consulta consulta) throws SQLException {
-        String sql = """
-                INSERT INTO consulta (horario, data, animal_id, status, sintomas)
-                VALUES (?, ?, ?, ?, ?)
-                RETURNING id, criada_em
-                """;
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+        String sql = "INSERT INTO consulta (horario, data, animal_id, status, sintomas) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setInt(1, consulta.getHorario());
             stmt.setObject(2, consulta.getData());
             stmt.setInt(3, consulta.getPaciente().getId());
             stmt.setString(4, consulta.getStatus().getCodigo());
             stmt.setString(5, consulta.getSintomas());
-            try (ResultSet resultado = stmt.executeQuery()) {
-                resultado.next();
-                consulta.setId(resultado.getInt("id"));
-                consulta.setCriadaEm(instante(resultado, "criada_em"));
+            stmt.executeUpdate();
+            try (ResultSet chaves = stmt.getGeneratedKeys()) {
+                chaves.next();
+                consulta.setId(chaves.getInt(1));
             }
         }
     }
@@ -107,7 +104,7 @@ public class ConsultaDAO {
     }
 
     public void iniciarAtendimento(int id) throws SQLException {
-        String sql = "UPDATE consulta SET status = 'atendimento', iniciada_em = now() WHERE id = ?";
+        String sql = "UPDATE consulta SET status = 'atendimento', iniciada_em = CURRENT_TIMESTAMP(3) WHERE id = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
@@ -115,7 +112,7 @@ public class ConsultaDAO {
     }
 
     public void finalizar(int id) throws SQLException {
-        String sql = "UPDATE consulta SET status = 'finalizada', finalizada_em = now() WHERE id = ?";
+        String sql = "UPDATE consulta SET status = 'finalizada', finalizada_em = CURRENT_TIMESTAMP(3) WHERE id = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
@@ -170,7 +167,7 @@ public class ConsultaDAO {
 
     /** Data e hora gravadas (ou null), em milissegundos, que é a precisão que o navegador entende. */
     private static Instant instante(ResultSet resultado, String coluna) throws SQLException {
-        OffsetDateTime valor = resultado.getObject(coluna, OffsetDateTime.class);
+        Timestamp valor = resultado.getTimestamp(coluna);
         return valor == null ? null : valor.toInstant().truncatedTo(ChronoUnit.MILLIS);
     }
 }

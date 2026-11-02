@@ -27,10 +27,10 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Driver JDBC do PostgreSQL (carregado com Class.forName em ConexaoBD) -->
+        <!-- Driver JDBC do MySQL (carregado com Class.forName em ConexaoBD) -->
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
     </dependencies>
@@ -44,6 +44,14 @@
             <resource>
                 <directory>public</directory>
                 <targetPath>static</targetPath>
+            </resource>
+            <!-- Os scripts do banco (docs/codigo.mysql e docs/insert.mysql) vão para dentro do .jar, em banco/ -->
+            <resource>
+                <directory>docs</directory>
+                <targetPath>banco</targetPath>
+                <includes>
+                    <include>*.mysql</include>
+                </includes>
             </resource>
         </resources>
         <plugins>
