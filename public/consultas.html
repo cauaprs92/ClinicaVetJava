@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ClinicaVet · Consultas</title>
+    <meta name="description" content="Agendar, atender e finalizar consultas na ClinicaVet.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Inter:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="consultas">
+
+    <header class="topo">
+        <div class="container">
+            <a class="marca" href="index.html"><span class="marca-simbolo">C</span>ClinicaVet</a>
+            <nav class="nav" aria-label="Principal">
+                <a href="index.html" data-nav="inicio">Home</a>
+                <a href="agenda.html" data-nav="agenda">Agenda</a>
+                <a href="consultas.html" data-nav="consultas">Consultas</a>
+                <a href="farmacia.html" data-nav="farmacia">Farmácia</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+
+            <header class="cabecalho-pagina">
+                <span class="sobretitulo">Recepção</span>
+                <h1>Consultas</h1>
+                <p>Agende consultas, inicie o atendimento quando o paciente chegar e finalize na saída.</p>
+            </header>
+
+            <section class="cartao">
+                <h2>Nova consulta</h2>
+                <p class="descricao">Só aparecem os horários livres na data escolhida. Toda consulta começa como Agendada até o início do atendimento.</p>
+                <form id="form-agendar">
+                    <div class="campos-3">
+                        <div class="campo">
+                            <label for="tutor">Nome do tutor</label>
+                            <input id="tutor" type="text" name="tutor" autocomplete="name" placeholder="João Silva" maxlength="120" required>
+                        </div>
+                        <div class="campo">
+                            <label for="email">E-mail</label>
+                            <input id="email" type="email" name="email" autocomplete="email" placeholder="joao@email.com" maxlength="160" required>
+                        </div>
+                        <div class="campo">
+                            <label for="telefone">Telefone</label>
+                            <input id="telefone" type="tel" name="telefone" autocomplete="tel" inputmode="numeric" placeholder="(11) 90000-0000" maxlength="15" pattern="\(\d{2}\) \d{4,5}-\d{4}" title="Telefone com DDD, como (11) 90000-0000" required>
+                        </div>
+                    </div>
+                    <div class="campos-4">
+                        <div class="campo">
+                            <label for="animal">Nome do animal</label>
+                            <input id="animal" type="text" name="animal" autocomplete="off" placeholder="Rex" maxlength="80" required>
+                        </div>
+                        <div class="campo">
+                            <label for="especie">Espécie</label>
+                            <select id="especie" name="especie" required>
+                                <option value="cachorro">Cachorro</option>
+                                <option value="gato">Gato</option>
+                            </select>
+                        </div>
+                        <div class="campo">
+                            <label for="idade">Idade (anos)</label>
+                            <input id="idade" type="number" name="idade" inputmode="numeric" min="0" max="40" step="1" placeholder="5" required>
+                        </div>
+                        <div class="campo">
+                            <label for="caracteristica" data-rotulo-caracteristica>Porte</label>
+                            <select id="caracteristica" name="caracteristica" required></select>
+                        </div>
+                    </div>
+                    <div class="campos-3">
+                        <div class="campo">
+                            <label for="sintomas">Sintomas / queixa principal</label>
+                            <input id="sintomas" type="text" name="sintomas" autocomplete="off" placeholder="Febre e falta de apetite" maxlength="500" required>
+                        </div>
+                        <div class="campo">
+                            <label for="nova-data">Data</label>
+                            <input id="nova-data" type="date" name="data" required>
+                        </div>
+                        <div class="campo">
+                            <label for="sel-horario-livre">Horário</label>
+                            <select id="sel-horario-livre" name="horario" required></select>
+                        </div>
+                    </div>
+                    <div class="form-rodape">
+                        <span class="agendamento-info" id="nova-info"></span>
+                        <button type="submit" class="botao">Agendar consulta</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="secao">
+                <div class="secao-titulo">
+                    <h2>Consultas</h2>
+                    <span class="link-sutil" id="total-consultas"></span>
+                </div>
+                <div class="segmentado abas-status" role="group" aria-label="Filtrar por status">
+                    <button type="button" data-status="ativas" aria-pressed="true">Ativas<span class="contagem"></span></button>
+                    <button type="button" data-status="agendada" aria-pressed="false">Agendadas<span class="contagem"></span></button>
+                    <button type="button" data-status="atendimento" aria-pressed="false">Em atendimento<span class="contagem"></span></button>
+                    <button type="button" data-status="finalizada" aria-pressed="false">Finalizadas<span class="contagem"></span></button>
+                    <button type="button" data-status="todas" aria-pressed="false">Todas<span class="contagem"></span></button>
+                </div>
+                <div class="filtros-consultas" role="search">
+                    <div class="busca">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                        <input type="search" id="busca-consultas" placeholder="Código, animal, tutor, telefone ou data" aria-label="Buscar consultas" autocomplete="off">
+                    </div>
+                    <select id="filtro-especie" aria-label="Filtrar por espécie">
+                        <option value="">Espécie: todas</option>
+                        <option value="cachorro">Cachorros</option>
+                        <option value="gato">Gatos</option>
+                    </select>
+                    <select id="filtro-farmacia" aria-label="Filtrar por itens da farmácia">
+                        <option value="">Farmácia: todas</option>
+                        <option value="com">Com itens</option>
+                        <option value="sem">Sem itens</option>
+                    </select>
+                    <select id="filtro-ordem" aria-label="Ordenar consultas">
+                        <option value="data">Ordenar por data</option>
+                        <option value="codigo">Ordenar por código</option>
+                        <option value="animal">Ordenar por animal</option>
+                        <option value="valor">Maior valor na farmácia</option>
+                    </select>
+                </div>
+                <div class="consultas" id="lista-consultas"></div>
+            </section>
+
+        </div>
+    </main>
+
+    <dialog id="dialogo-consulta" aria-labelledby="consulta-titulo">
+
+        <!-- Ver / editar -->
+        <div class="dialogo-corpo" id="painel-editar">
+            <div class="dialogo-topo">
+                <div>
+                    <span class="sobretitulo" id="consulta-sobretitulo"></span>
+                    <div class="titulo-status">
+                        <h2 id="consulta-titulo">Editar consulta</h2>
+                        <span id="consulta-selo"></span>
+                    </div>
+                </div>
+                <button type="button" class="fechar" id="fechar-consulta" aria-label="Fechar">×</button>
+            </div>
+            <div class="faixa-status" id="consulta-faixa">
+                <span id="consulta-faixa-texto"></span>
+                <button type="button" class="botao pequeno" id="iniciar-atendimento">Iniciar atendimento</button>
+            </div>
+            <form id="form-editar">
+                <div class="campo">
+                    <label for="editar-tutor">Nome do tutor</label>
+                    <input id="editar-tutor" type="text" name="tutor" autocomplete="off" maxlength="120" required>
+                </div>
+                <div class="campos-2">
+                    <div class="campo">
+                        <label for="editar-email">E-mail</label>
+                        <input id="editar-email" type="email" name="email" autocomplete="off" maxlength="160" required>
+                    </div>
+                    <div class="campo">
+                        <label for="editar-telefone">Telefone</label>
+                        <input id="editar-telefone" type="tel" name="telefone" autocomplete="off" inputmode="numeric" placeholder="(11) 90000-0000" maxlength="15" pattern="\(\d{2}\) \d{4,5}-\d{4}" title="Telefone com DDD, como (11) 90000-0000" required>
+                    </div>
+                </div>
+                <div class="campos-2">
+                    <div class="campo">
+                        <label for="editar-animal">Nome do animal</label>
+                        <input id="editar-animal" type="text" name="animal" autocomplete="off" maxlength="80" required>
+                    </div>
+                    <div class="campo">
+                        <label for="editar-idade">Idade (anos)</label>
+                        <input id="editar-idade" type="number" name="idade" inputmode="numeric" min="0" max="40" step="1" required>
+                    </div>
+                </div>
+                <div class="campos-2">
+                    <div class="campo">
+                        <label for="editar-especie">Espécie</label>
+                        <select id="editar-especie" name="especie" required>
+                            <option value="cachorro">Cachorro</option>
+                            <option value="gato">Gato</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="editar-caracteristica" data-rotulo-caracteristica>Porte</label>
+                        <select id="editar-caracteristica" name="caracteristica" required></select>
+                    </div>
+                </div>
+                <div class="campo">
+                    <label for="editar-sintomas">Sintomas / queixa principal</label>
+                    <input id="editar-sintomas" type="text" name="sintomas" autocomplete="off" maxlength="500" required>
+                </div>
+                <div class="campos-2">
+                    <div class="campo">
+                        <label for="editar-data">Data</label>
+                        <input id="editar-data" type="date" name="data" required>
+                    </div>
+                    <div class="campo">
+                        <label for="editar-horario">Horário</label>
+                        <select id="editar-horario" name="horario" required></select>
+                    </div>
+                </div>
+                <div class="resumo">
+                    <span id="editar-farmacia-rotulo">Itens da farmácia</span>
+                    <strong id="editar-farmacia">R$ 0,00</strong>
+                </div>
+                <div class="dialogo-acoes" id="acoes-edicao">
+                    <button type="button" class="botao perigo" id="acao-perigo">
+                        <span class="icone-acao" id="acao-perigo-icone" aria-hidden="true"></span>
+                        <span id="acao-perigo-texto">Cancelar consulta</span>
+                    </button>
+                    <button type="submit" class="botao">Salvar alterações</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Confirmação: cancelar a consulta ou finalizar o atendimento (com pagamento da farmácia) -->
+        <div class="dialogo-corpo" id="painel-confirmar" hidden>
+            <div class="icone-perigo" id="confirmar-icone" aria-hidden="true"></div>
+            <h2 id="confirmar-titulo">Finalizar atendimento?</h2>
+            <p class="dialogo-texto" id="confirmar-texto"></p>
+            <div class="pagamento" id="confirmar-pagamento">
+                <div class="pagamento-linha">
+                    <span id="pagamento-rotulo">Farmácia a pagar</span>
+                    <strong id="pagamento-valor">R$ 0,00</strong>
+                </div>
+                <label class="checagem" id="pagamento-checagem">
+                    <input type="checkbox" id="pagamento-ok">
+                    <span>Confirmo que o pagamento da farmácia foi recebido.</span>
+                </label>
+                <p class="pagamento-nota" id="pagamento-sem-consumo">Nenhum item da farmácia nesta consulta, nada a pagar.</p>
+            </div>
+            <div class="botoes-lado">
+                <button type="button" class="botao contorno" id="confirmar-voltar">Voltar</button>
+                <button type="button" class="botao" id="confirmar-acao">Finalizar consulta</button>
+            </div>
+        </div>
+
+    </dialog>
+
+    <footer class="rodape">
+        <div class="container">
+            <span>ClinicaVet · projeto de estudos · dados salvos neste navegador</span>
+            <button type="button" id="redefinir">Restaurar dados de exemplo</button>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

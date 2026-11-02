@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ClinicaVet · Home</title>
+    <meta name="description" content="Painel da ClinicaVet: agenda do dia, consultas e farmácia.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Inter:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="inicio">
+
+    <header class="topo">
+        <div class="container">
+            <a class="marca" href="index.html"><span class="marca-simbolo">C</span>ClinicaVet</a>
+            <nav class="nav" aria-label="Principal">
+                <a href="index.html" data-nav="inicio">Home</a>
+                <a href="agenda.html" data-nav="agenda">Agenda</a>
+                <a href="consultas.html" data-nav="consultas">Consultas</a>
+                <a href="farmacia.html" data-nav="farmacia">Farmácia</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+
+            <section class="heroi">
+                <div class="heroi-texto">
+                    <span class="sobretitulo" id="data-hoje">Hoje</span>
+                    <h1>Cuidado em dia,<br><em>pata a pata.</em></h1>
+                    <p>Acompanhe a agenda, receba os pacientes e controle a farmácia da clínica em um só lugar.</p>
+                    <div class="acoes">
+                        <a class="botao" href="consultas.html">Nova consulta</a>
+                        <a class="botao contorno" href="agenda.html">Ver agenda</a>
+                    </div>
+                </div>
+
+            </section>
+
+            <section class="graficos" aria-label="Gráficos">
+                <div class="cartao grafico-cartao">
+                    <div class="grafico-topo">
+                        <h2>Ocupação da agenda</h2>
+                    </div>
+                    <div class="ocupacao">
+                        <div class="anel" id="anel" role="img" aria-label="Ocupação da agenda de hoje">
+                            <div class="anel-valor"><span id="anel-pct">0%</span><small>ocupação</small></div>
+                        </div>
+                        <p id="ocupacao-texto"><strong>0 de 10</strong> horários ocupados hoje</p>
+                    </div>
+                </div>
+
+                <div class="cartao grafico-cartao">
+                    <div class="grafico-topo">
+                        <h2>Consultas por status</h2>
+                    </div>
+                    <div class="pizza-corpo">
+                        <div class="pizza" id="pizza">
+                            <svg viewBox="0 0 200 200" id="pizza-svg" role="img" aria-labelledby="pizza-resumo"></svg>
+                            <!-- Centro: total de consultas; ao passar o mouse, a porcentagem do status -->
+                            <div class="anel-valor pizza-centro" aria-live="polite">
+                                <span id="pizza-centro-valor">0</span><small id="pizza-centro-rotulo">consultas</small>
+                            </div>
+                        </div>
+                        <ul class="pizza-legenda" id="pizza-legenda" aria-label="Legenda: consultas por status"></ul>
+                    </div>
+                    <p class="sr-only" id="pizza-resumo"></p>
+                </div>
+            </section>
+
+            <section class="indicadores" aria-label="Resumo">
+                <div class="indicador"><span>Horários livres hoje</span><strong id="ind-livres">0</strong></div>
+                <div class="indicador"><span>Em atendimento</span><strong id="ind-atendimento">0</strong></div>
+                <div class="indicador"><span>Consultas agendadas</span><strong id="ind-agendadas">0</strong></div>
+                <div class="indicador"><span>Farmácia em aberto</span><strong id="ind-farmacia">R$ 0,00</strong></div>
+            </section>
+
+            <section class="secao">
+                <div class="secao-titulo"><h2>Por onde começar</h2></div>
+                <div class="atalhos">
+                    <a class="atalho" href="agenda.html">
+                        <span class="atalho-num">01</span>
+                        <h3>Agenda</h3>
+                        <p>Os 10 horários de cada dia, de manhã e à tarde, com o paciente de cada um.</p>
+                        <span class="seta" aria-hidden="true">→</span>
+                    </a>
+                    <a class="atalho" href="consultas.html">
+                        <span class="atalho-num">02</span>
+                        <h3>Consultas</h3>
+                        <p>Agende, inicie o atendimento e finalize as consultas.</p>
+                        <span class="seta" aria-hidden="true">→</span>
+                    </a>
+                    <a class="atalho" href="farmacia.html">
+                        <span class="atalho-num">03</span>
+                        <h3>Farmácia</h3>
+                        <p>Lance as vacinas e os medicamentos de cada atendimento e acompanhe o estoque.</p>
+                        <span class="seta" aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </section>
+
+            <section class="secao">
+                <div class="secao-titulo">
+                    <h2>Agenda de hoje</h2>
+                    <a class="link-sutil" href="agenda.html">Ver a agenda completa →</a>
+                </div>
+                <div id="lista-hoje"></div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="rodape">
+        <div class="container">
+            <span>ClinicaVet · projeto de estudos · dados salvos neste navegador</span>
+            <button type="button" id="redefinir">Restaurar dados de exemplo</button>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

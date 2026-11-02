@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ClinicaVet · Agenda</title>
+    <meta name="description" content="Agenda do dia da ClinicaVet.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Inter:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="agenda">
+
+    <header class="topo">
+        <div class="container">
+            <a class="marca" href="index.html"><span class="marca-simbolo">C</span>ClinicaVet</a>
+            <nav class="nav" aria-label="Principal">
+                <a href="index.html" data-nav="inicio">Home</a>
+                <a href="agenda.html" data-nav="agenda">Agenda</a>
+                <a href="consultas.html" data-nav="consultas">Consultas</a>
+                <a href="farmacia.html" data-nav="farmacia">Farmácia</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+
+            <header class="cabecalho-pagina">
+                <span class="sobretitulo">Agenda da clínica</span>
+                <h1>Agenda</h1>
+                <p>Dez horários por dia, cinco de manhã e cinco à tarde. Toque em um horário para ver os detalhes.</p>
+            </header>
+
+            <div class="barra-dia">
+                <div class="seletor-dia">
+                    <button type="button" class="icone-botao" id="dia-anterior" aria-label="Dia anterior" title="Dia anterior">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                    <div class="dia-atual" aria-live="polite">
+                        <span class="dia-titulo" id="dia-titulo">Hoje</span>
+                        <span class="dia-sub" id="dia-sub"></span>
+                    </div>
+                    <button type="button" class="icone-botao" id="dia-seguinte" aria-label="Próximo dia" title="Próximo dia">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </div>
+                <div class="dia-escolha">
+                    <input type="date" id="dia-agenda" aria-label="Escolher o dia da agenda">
+                    <button type="button" class="botao contorno pequeno" id="dia-hoje">Hoje</button>
+                </div>
+            </div>
+
+            <div class="barra-filtros">
+                <div class="segmentado" role="group" aria-label="Filtrar horários">
+                    <button type="button" data-filtro="todos" aria-pressed="true">Todos<span class="contagem"></span></button>
+                    <button type="button" data-filtro="livres" aria-pressed="false">Livres<span class="contagem"></span></button>
+                    <button type="button" data-filtro="agendadas" aria-pressed="false">Agendadas<span class="contagem"></span></button>
+                    <button type="button" data-filtro="atendimento" aria-pressed="false">Em atendimento<span class="contagem"></span></button>
+                    <button type="button" data-filtro="finalizadas" aria-pressed="false">Finalizadas<span class="contagem"></span></button>
+                </div>
+                <div class="legenda" aria-hidden="true">
+                    <span><i class="ponto livre"></i>Livre</span>
+                    <span><i class="ponto agendada"></i>Agendada</span>
+                    <span><i class="ponto atendimento"></i>Em atendimento</span>
+                    <span><i class="ponto finalizada"></i>Finalizada</span>
+                </div>
+            </div>
+
+            <div id="mapa-agenda"></div>
+
+        </div>
+    </main>
+
+    <dialog id="dialogo-horario" aria-labelledby="dialogo-titulo">
+        <div class="dialogo-corpo">
+            <div class="dialogo-topo">
+                <div>
+                    <span class="sobretitulo" id="dialogo-turno"></span>
+                    <h2 id="dialogo-titulo"></h2>
+                </div>
+                <button type="button" class="fechar" id="fechar-dialogo" aria-label="Fechar">×</button>
+            </div>
+            <dl class="detalhes" id="dialogo-detalhes"></dl>
+            <div class="proximas" id="dialogo-historico-bloco" hidden>
+                <h3 id="dialogo-historico-titulo">Outras consultas do paciente</h3>
+                <ul id="dialogo-historico"></ul>
+            </div>
+            <div class="botoes-dialogo" id="dialogo-botoes"></div>
+        </div>
+    </dialog>
+
+    <footer class="rodape">
+        <div class="container">
+            <span>ClinicaVet · projeto de estudos · dados salvos neste navegador</span>
+            <button type="button" id="redefinir">Restaurar dados de exemplo</button>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ClinicaVet · Farmácia</title>
+    <meta name="description" content="Itens usados nos atendimentos e estoque da farmácia da ClinicaVet.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Inter:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="farmacia">
+
+    <header class="topo">
+        <div class="container">
+            <a class="marca" href="index.html"><span class="marca-simbolo">C</span>ClinicaVet</a>
+            <nav class="nav" aria-label="Principal">
+                <a href="index.html" data-nav="inicio">Home</a>
+                <a href="agenda.html" data-nav="agenda">Agenda</a>
+                <a href="consultas.html" data-nav="consultas">Consultas</a>
+                <a href="farmacia.html" data-nav="farmacia">Farmácia</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+
+            <header class="cabecalho-pagina">
+                <span class="sobretitulo">Atendimento</span>
+                <h1>Farmácia</h1>
+                <p>Lance as vacinas e os medicamentos usados em cada atendimento. O valor vai direto para a conta da consulta.</p>
+            </header>
+
+            <div class="grade-2">
+                <section class="cartao">
+                    <h2>Lançar itens</h2>
+                    <p class="descricao">Só aparecem consultas em atendimento (atendimento iniciado).</p>
+                    <p class="aviso" id="aviso-sem-atendimento" hidden>
+                        Nenhum paciente em atendimento. <a href="consultas.html">Inicie o atendimento de uma consulta</a> para lançar itens.
+                    </p>
+                    <form id="form-consumo">
+                        <div class="campo">
+                            <label for="sel-consulta">Consulta</label>
+                            <select id="sel-consulta" name="consulta" required></select>
+                        </div>
+                        <fieldset class="produtos">
+                            <legend>Itens</legend>
+                            <div id="lista-produtos-consumo" class="lista-produtos"></div>
+                            <div class="adicionar-produto">
+                                <select id="sel-adicionar" aria-label="Adicionar item"></select>
+                            </div>
+                        </fieldset>
+                        <div class="resumo">
+                            <span id="resumo-itens">Nenhum item selecionado</span>
+                            <strong id="resumo-total">R$ 0,00</strong>
+                        </div>
+                        <button type="submit" class="botao cheio">Lançar na consulta</button>
+                    </form>
+                </section>
+
+                <section class="cartao">
+                    <div class="secao-titulo" style="margin-bottom: 6px">
+                        <h2>Estoque</h2>
+                        <span class="link-sutil" id="total-itens"></span>
+                    </div>
+                    <p class="descricao">Com 5 unidades ou menos, o item fica em alerta.</p>
+                    <ul class="estoque" id="lista-estoque"></ul>
+                </section>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="rodape">
+        <div class="container">
+            <span>ClinicaVet · projeto de estudos · dados salvos neste navegador</span>
+            <button type="button" id="redefinir">Restaurar dados de exemplo</button>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
