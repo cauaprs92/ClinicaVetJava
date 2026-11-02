@@ -1,191 +1,93 @@
-# 🐾 System Clinical
+<div align="center">
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java">
-  <img src="https://img.shields.io/badge/POO-4B8BBE?style=for-the-badge" alt="POO">
-  <img src="https://img.shields.io/badge/Status-Em%20desenvolvimento-yellow?style=for-the-badge" alt="Status">
-</p>
+# 🐾 ClinicaVet
 
-<p align="center">
-  <strong>Sistema de controle e gerenciamento de uma clínica veterinária desenvolvido em Java.</strong>
-</p>
+### Sistema de agenda de clínica veterinária com farmácia
+
+<br/>
+
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)](https://developer.mozilla.org/docs/Web/HTML)
+[![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)](https://developer.mozilla.org/docs/Web/CSS)
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/docs/Web/JavaScript)
+[![Java](https://img.shields.io/badge/Java-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://openjdk.org)
+[![POO](https://img.shields.io/badge/POO-4B8BBE?style=flat-square)](#-conceitos-de-poo-no-app-de-terminal)
+[![Deploy](https://img.shields.io/badge/Deploy-Vercel-000000?style=flat-square&logo=vercel)](https://vercel.com)
+
+</div>
 
 ---
 
 ## 📋 Sobre o projeto
 
-O **System Clinical** é um sistema desenvolvido em **Java** com foco no gerenciamento de uma clínica veterinária.
+O **ClinicaVet** começou como um sistema de terminal em **Java** para praticar **Programação Orientada a Objetos**: uma agenda de 10 horários onde dá para agendar, consultar, editar e cancelar consultas de cães e gatos.
 
-O projeto foi desenvolvido como atividade acadêmica para colocar em prática os principais conceitos de **Programação Orientada a Objetos (POO)**, simulando uma aplicação para organização de consultas e informações dos animais atendidos pela clínica.
-
-A aplicação permite controlar os horários disponíveis, realizar agendamentos, consultar a agenda, editar consultas e cancelar atendimentos.
-
-O projeto também utiliza conceitos como **encapsulamento, herança, abstração e polimorfismo**, proporcionando uma aplicação prática dos fundamentos da orientação a objetos.
+Agora ele também tem uma **interface web** (pasta `public/`), com as mesmas regras da versão de terminal e mais algumas: status da consulta, farmácia com estoque e pagamento no fim do atendimento.
 
 ---
 
-## 🎯 Objetivos
+## ✨ O que dá pra fazer no site
 
-* Desenvolver um sistema funcional para uma clínica veterinária;
-* Praticar conceitos fundamentais de Java;
-* Aplicar os princípios da Programação Orientada a Objetos;
-* Trabalhar com classes e objetos;
-* Implementar herança e polimorfismo;
-* Desenvolver um sistema de gerenciamento de consultas;
-* Praticar validações e estruturas de controle.
+- ✅ Agendar uma consulta em uma **data e horário**: a consulta ganha um **código** único (#0001, #0002…) e começa com o status **Agendada**
+- ✅ Agendar em qualquer dia a partir de hoje: só aparecem os horários livres na data escolhida, e cada horário recebe no máximo uma consulta
+- ✅ Cadastrar o **tutor** (nome, e-mail e telefone) e o **paciente**: cachorro (com porte) ou gato (com temperamento), com idade e sintomas
+- ✅ Iniciar o atendimento no dia da consulta: o status passa para **Em atendimento**
+- ✅ Finalizar a consulta confirmando o pagamento da farmácia: o status passa para **Finalizada** e ela fica no histórico do paciente
+- ✅ Cancelar uma consulta agendada
+- ✅ Editar os dados do tutor e do animal, ou remarcar data e horário
+- ✅ Agendar o **retorno** de um paciente com os dados já preenchidos
+- ✅ Telefone sempre no formato `(11) 90000-0000` (celular) ou `(11) 3000-0000` (fixo)
+- ✅ Buscar consultas pelo código (`#0003`), animal, tutor, telefone ou data, filtrar por status, espécie e farmácia, e ordenar
+- ✅ Lançar várias vacinas e medicamentos de uma vez em uma consulta em atendimento
+- ✅ Ver a agenda de qualquer dia (livre, agendada, em atendimento ou finalizada) e o estoque da farmácia
+
+```
+Agendada ──iniciar atendimento──▶ Em atendimento ──finalizar (pagamento da farmácia)──▶ Finalizada
+    └──cancelar consulta──▶ (removida)
+```
+
+> Os dados ficam salvos apenas no navegador de quem usa (`localStorage`). Não há banco de dados nem compartilhamento entre usuários.
 
 ---
 
-## ⚙️ Funcionalidades
+## 🧱 Estrutura do projeto
 
-### 📅 Gerenciamento de consultas
-
-* [x] Agendamento de consultas;
-* [x] Consulta da agenda;
-* [x] Edição de consultas;
-* [x] Cancelamento de consultas;
-* [x] Controle de horários disponíveis;
-* [x] Validação de horários ocupados;
-* [x] Identificação do tipo de animal;
-* [x] Registro de informações do tutor;
-* [x] Registro dos sintomas/queixas do animal.
-
-### 🐶🐱 Animais
-
-O sistema trabalha com diferentes tipos de animais através de uma estrutura de herança.
-
-Atualmente são contemplados:
-
-* 🐶 **Cachorro**
-* 🐱 **Gato**
-
-Cada tipo de animal possui suas próprias características e comportamento.
-
----
-
-## 🧠 Conceitos de POO utilizados
-
-Um dos principais objetivos do projeto é aplicar os fundamentos da **Programação Orientada a Objetos**.
-
-### 🔒 Encapsulamento
-
-Os atributos das classes são protegidos utilizando modificadores de acesso, principalmente `private`, com acesso controlado através de métodos.
-
-```java
-private String nome;
-private int idade;
 ```
-
-### 🧬 Herança
-
-A classe base `Animal` é utilizada como estrutura para os diferentes tipos de animais.
-
-```java
-public class Cachorro extends Animal
-```
-
-```java
-public class Gato extends Animal
-```
-
-### 🎭 Abstração
-
-A classe `Animal` representa uma abstração dos animais atendidos pela clínica.
-
-```java
-public abstract class Animal
-```
-
-### 🔄 Polimorfismo
-
-O sistema permite trabalhar com diferentes tipos de animais através de uma referência da classe base:
-
-```java
-Animal paciente;
-```
-
-Assim, o mesmo sistema pode trabalhar com objetos `Cachorro` ou `Gato`.
-
-### ♻️ Sobrescrita de métodos
-
-Cada animal pode possuir seu próprio comportamento através de `@Override`.
-
-Exemplo:
-
-```java
-@Override
-public String emitirSom() {
-    return "Au Au";
-}
-```
-
----
-
-## 🏗️ Estrutura do projeto
-
-```text
-system-clinical/
+ClinicaVet/
+├── public/                   # Site (estático, pronto para a Vercel)
+│   ├── index.html            # Home: ocupação da agenda, consultas por status, indicadores e agenda de hoje
+│   ├── agenda.html           # Os 10 horários do dia, por turno
+│   ├── consultas.html        # Agendar, atender, finalizar e cancelar
+│   ├── farmacia.html         # Lançar itens na consulta e ver o estoque
+│   ├── app.js                # Regras da agenda, das consultas e da farmácia (compartilhado)
+│   └── css/style.css         # Tema visual (claro e escuro)
 │
-├── src/
-│   ├── Main.java
-│   ├── Animal.java
-│   ├── Cachorro.java
-│   ├── Gato.java
-│   ├── Consulta.java
-│   └── AgendaManager.java
-│
-└── README.md
+└── console-app/              # Versão original em Java puro para terminal (referência de estudo)
 ```
 
-### 📁 Principais classes
-
-| Classe          | Responsabilidade                        |
-| --------------- | --------------------------------------- |
-| `Main`          | Inicialização e interação com o sistema |
-| `Animal`        | Classe abstrata base para os animais    |
-| `Cachorro`      | Representação de pacientes caninos      |
-| `Gato`          | Representação de pacientes felinos      |
-| `Consulta`      | Representação dos agendamentos          |
-| `AgendaManager` | Gerenciamento da agenda da clínica      |
+O site e o app de terminal seguem as mesmas regras: 10 horários por dia (08:00 às 12:00 e 14:00 às 18:00), um paciente por horário e animais do tipo cachorro (com porte) ou gato (com temperamento).
 
 ---
 
-## 🗓️ Funcionamento da agenda
+## 🚀 Como abrir
 
-A agenda possui **10 horários disponíveis** para os atendimentos.
+**Na sua máquina:** abra o arquivo `public/index.html` no navegador. Não precisa instalar nada.
 
-Os horários são armazenados utilizando um vetor de objetos `Consulta`:
-
-```java
-Consulta[] agenda = new Consulta[10];
-```
-
-Cada posição representa um horário da agenda.
-
-O sistema verifica se o horário está disponível antes de realizar um novo agendamento.
-
-Exemplo:
-
-```text
-========== AGENDA ==========
-
-1 - 08:00 - Disponível
-2 - 09:00 - Rex
-3 - 10:00 - Mingau
-4 - 11:00 - Disponível
-5 - 13:00 - Disponível
-...
-```
+**Na Vercel:** importe o repositório em [vercel.com/new](https://vercel.com/new). A pasta `public/` é servida como site estático, sem etapa de build.
 
 ---
 
-## 🖥️ Exemplo de utilização
+## 🖥️ App de terminal
 
-Ao iniciar o sistema, o usuário encontra um menu de gerenciamento:
+A primeira versão do projeto continua em `console-app/`:
+
+```bash
+javac console-app/*.java
+java -cp console-app Main
+```
 
 ```text
 ====================================
-       CLÍNICA VETERINÁRIA
+        CLINICA VETERINARIA
 ====================================
 
 1 - Agendar consulta
@@ -193,115 +95,26 @@ Ao iniciar o sistema, o usuário encontra um menu de gerenciamento:
 3 - Editar consulta
 4 - Cancelar consulta
 5 - Sair
-
-Escolha uma opção:
 ```
 
-### Exemplo de agendamento
+### 🧠 Conceitos de POO no app de terminal
 
-```text
-Escolha o tipo de animal:
+| Conceito | Onde aparece |
+| --- | --- |
+| 🔒 **Encapsulamento** | Atributos `private` com acesso por `get` e `set` (`Animal`, `Consulta`) |
+| 🧬 **Herança** | `Cachorro extends Animal` e `Gato extends Animal` |
+| 🎭 **Abstração** | `public abstract class Animal`, que não pode ser instanciada |
+| 🔄 **Polimorfismo** | `Animal paciente` guarda um `Cachorro` ou um `Gato`, e `emitirSom()` responde "Au Au!" ou "Miau!" |
+| ♻️ **Sobrescrita** | `@Override` em `emitirSom()`, `getTipo()` e `getCaracteristica()` |
 
-1 - Cachorro
-2 - Gato
-
-Opção: 1
-
-Nome do animal: Rex
-Idade: 5
-Nome do dono: João
-Telefone: 99999-9999
-Porte: Grande
-Sintomas: Febre
-
-Consulta agendada com sucesso!
-```
-
----
-
-## 🛠️ Tecnologias
-
-O projeto utiliza principalmente:
-
-* ☕ **Java**
-* 🧱 **Programação Orientada a Objetos**
-* 📦 Classes e objetos
-* 🔒 Encapsulamento
-* 🧬 Herança
-* 🎭 Abstração
-* 🔄 Polimorfismo
-* 📚 Vetores
-* ⌨️ `Scanner`
-* 🔀 Estruturas condicionais
-* 🔁 Estruturas de repetição
-
----
-
-## ▶️ Como executar
-
-### 1. Clone o repositório
-
-```bash
-git clone https://github.com/mateusricardodev/system-clinical.git
-```
-
-### 2. Entre na pasta
-
-```bash
-cd system-clinical
-```
-
-### 3. Compile o projeto
-
-Caso os arquivos estejam diretamente dentro de `src`:
-
-```bash
-javac src/*.java
-```
-
-### 4. Execute
-
-```bash
-java -cp src Main
-```
-
-> Dependendo da IDE utilizada, também é possível executar diretamente a classe `Main`.
-
----
-
-## 💻 IDEs recomendadas
-
-O projeto pode ser executado em qualquer ambiente com suporte a Java, como:
-
-* IntelliJ IDEA
-* Eclipse
-* Visual Studio Code
-* NetBeans
-
----
-
-## 📚 Contexto acadêmico
-
-Este projeto foi desenvolvido com finalidade **educacional**, tendo como principal objetivo praticar os conceitos apresentados durante as aulas de **Programação Orientada a Objetos em Java**.
-
-A implementação busca manter uma estrutura simples e compatível com os conteúdos estudados, priorizando a compreensão dos fundamentos de POO em vez da utilização de frameworks ou arquiteturas avançadas.
-
----
-
-## 🚀 Possíveis melhorias futuras
-
-Algumas funcionalidades podem ser adicionadas futuramente:
-
-* [ ] Persistência de dados;
-* [ ] Banco de dados;
-* [ ] Cadastro de veterinários;
-* [ ] Cadastro de funcionários;
-* [ ] Histórico de consultas;
-* [ ] Prontuário dos animais;
-* [ ] Sistema de login;
-* [ ] Interface gráfica;
-* [ ] Relatórios de atendimentos;
-* [ ] Controle financeiro da clínica.
+| Classe | Responsabilidade |
+| --- | --- |
+| `Main` | Menu e interação com o usuário |
+| `Animal` | Classe abstrata base dos pacientes |
+| `Cachorro` | Paciente canino (porte) |
+| `Gato` | Paciente felino (temperamento) |
+| `Consulta` | Um agendamento: paciente, horário e sintomas |
+| `AgendaManager` | A agenda do dia, em um vetor `Consulta[10]` |
 
 ---
 
@@ -314,5 +127,5 @@ GitHub: [@mateusricardodev](https://github.com/mateusricardodev)
 ---
 
 <p align="center">
-  🐾 <strong>System Clinical</strong> — Organizando o cuidado com quem não pode falar. 🐾
+  🐾 <strong>ClinicaVet</strong> — Organizando o cuidado com quem não pode falar. 🐾
 </p>
