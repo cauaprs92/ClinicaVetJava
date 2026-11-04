@@ -22,6 +22,8 @@
     --st-agendada: #b07a1e;
     --st-atendimento: #3a72a8;
     --st-finalizada: #b4485f;
+    /* Cor das barras do gráfico de remédios (validada contra o fundo, claro e escuro). */
+    --barra: #2a78d6;
     --shadow: 0 1px 2px rgba(21, 32, 30, .04), 0 12px 32px -18px rgba(21, 32, 30, .18);
     --radius: 16px;
     --radius-sm: 10px;
@@ -49,6 +51,7 @@
         --st-agendada: #bc8a2c;
         --st-atendimento: #5689d2;
         --st-finalizada: #cf6680;
+        --barra: #3987e5;
         --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px -18px rgba(0, 0, 0, .6);
         color-scheme: dark;
     }
@@ -279,6 +282,26 @@ main {
     margin-top: 44px;
 }
 
+/* Cada gráfico tem o seu filtro de período, logo abaixo do título. */
+.grafico-filtro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    flex-wrap: wrap;
+    margin-top: -8px;
+}
+
+.grafico-filtro .segmentado button { padding: 6px 12px; font-size: 0.84rem; }
+
+.grafico-intervalo {
+    color: var(--muted);
+    font-size: 0.84rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.barras-vazio.aviso-grafico { color: var(--busy); }
+
 .grafico-cartao {
     display: flex;
     flex-direction: column;
@@ -294,6 +317,12 @@ main {
 
 .grafico-topo h2 { font-size: 1.2rem; }
 
+.grafico-sub {
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-variant-numeric: tabular-nums;
+}
+
 .ocupacao {
     flex: 1;
     display: flex;
@@ -304,109 +333,123 @@ main {
     text-align: center;
 }
 
-.pizza-corpo {
-    display: flex;
-    align-items: center;
-    gap: 32px;
+/* Gráfico de barras: remédios mais vendidos no período do filtro. */
+.barras-caixa { position: relative; }
+
+.barras {
+    --nomes: 9.5rem;   /* coluna dos nomes */
+    --folga: 2.2rem;   /* espaço à direita para o número da barra maior */
+    display: grid;
+    grid-template-columns: minmax(0, var(--nomes)) minmax(0, 1fr);
+    column-gap: 14px;
 }
 
-.pizza {
+.barras-grade {
+    grid-column: 2;
     position: relative;
-    flex-shrink: 0;
-    width: 180px;
-    height: 180px;
-}
-
-.pizza svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-}
-
-/* Anel: mesma espessura e trilho do anel de ocupação. */
-.trilho,
-.fatia {
-    fill: none;
-    stroke-width: 18;
-}
-
-.trilho { stroke: var(--surface-2); }
-
-.fatia {
-    cursor: pointer;
-    transition: opacity .15s;
-}
-
-.fatia.agendada { stroke: var(--st-agendada); }
-.fatia.atendimento { stroke: var(--st-atendimento); }
-.fatia.finalizada { stroke: var(--st-finalizada); }
-
-.pizza[data-ativo] .fatia:not(.ativa) { opacity: .3; }
-
-/* Número no centro, igual ao do anel de ocupação. */
-.pizza-centro {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-content: center;
-    text-align: center;
+    margin-right: var(--folga);
     pointer-events: none;
-    font-variant-numeric: tabular-nums;
 }
 
-.pizza-legenda {
-    flex: 1;
-    min-width: 0;
-    list-style: none;
-    margin: 0;
-    padding: 0;
+.barras-grade span {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--line);
 }
 
-.pizza-legenda li {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto 4.4rem;
-    align-items: baseline;
-    gap: 12px;
-    padding: 11px 0;
-    border-bottom: 1px solid var(--line);
-    font-size: 0.92rem;
-    transition: opacity .15s;
+.barras-nome {
+    grid-column: 1;
+    align-self: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    font-size: 0.9rem;
 }
 
-.pizza-legenda li:last-child { border-bottom: none; }
-.pizza-legenda[data-ativo] li:not(.ativa) { opacity: .4; }
+.barras-grupo {
+    grid-column: 2;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 12px var(--folga) 12px 0;
+    cursor: default;
+}
 
-.pizza-nome {
+.barras-faixa {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-width: 0;
+    gap: 6px;
+    height: 20px;
 }
 
-.amostra {
-    width: 10px;
-    height: 10px;
-    border-radius: 3px;
-    flex-shrink: 0;
+/* Barra: ponta arredondada, base reta (encostada no zero). */
+.barra-h {
+    flex: none;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+    background: var(--barra);
+    transition: opacity .15s;
 }
 
-.amostra.agendada { background: var(--st-agendada); }
-.amostra.atendimento { background: var(--st-atendimento); }
-.amostra.finalizada { background: var(--st-finalizada); }
+.barras-grupo:hover .barra-h { opacity: .85; }
 
-.pizza-qtd {
+.barras-valor {
+    flex: none;
     color: var(--muted);
-    font-size: 0.86rem;
+    font-size: 0.78rem;
     font-variant-numeric: tabular-nums;
 }
 
-.pizza-pct {
-    text-align: right;
-    font-family: var(--serif);
-    font-size: 1.15rem;
+.barras-eixo {
+    grid-column: 2;
+    position: relative;
+    height: 22px;
+    margin-right: var(--folga);
+    color: var(--muted);
+    font-size: 11px;
     font-variant-numeric: tabular-nums;
 }
+
+.barras-eixo span {
+    position: absolute;
+    top: 6px;
+    transform: translateX(-50%);
+}
+
+.barras-vazio {
+    margin: 0;
+    padding: 56px 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+    text-align: center;
+}
+
+.grafico-dica {
+    position: absolute;
+    right: 0;
+    z-index: 2;
+    min-width: 220px;
+    max-width: 320px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    font-size: 0.82rem;
+    pointer-events: none;
+}
+
+.grafico-dica strong {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.grafico-dica p { margin: 0; font-variant-numeric: tabular-nums; }
+.grafico-dica .sub { color: var(--muted); margin-top: 2px; }
 
 .sr-only {
     position: absolute;
@@ -452,11 +495,25 @@ main {
 
 /* ---------- Indicadores ---------- */
 
+.painel-resumo { margin-top: 40px; }
+
+/* Título do resumo com o filtro de período ao lado. */
+.resumo-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.resumo-topo h2 { font-size: 1.5rem; }
+.resumo-topo .grafico-filtro { margin-top: 0; }
+
 .indicadores {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
-    margin-top: 40px;
 }
 
 .indicador {
@@ -474,10 +531,18 @@ main {
 }
 
 .indicador strong {
+    display: block;
     font-family: var(--serif);
     font-size: 1.85rem;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
+}
+
+.indicador small {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 0.8rem;
 }
 
 /* ---------- Atalhos ---------- */
@@ -1815,9 +1880,12 @@ label.checagem input {
     .form-rodape { flex-direction: column; align-items: stretch; }
     .form-rodape .botao { width: 100%; }
     .dialogo-acoes { flex-direction: column-reverse; }
-    .pizza-corpo { flex-direction: column; align-items: stretch; gap: 20px; }
-    .pizza { align-self: center; }
     .graficos { margin-top: 32px; }
+    .filtro-periodo { width: 100%; }
+    .grafico-filtro .filtro-periodo button { flex: 1; padding: 6px 4px; }
+    .resumo-topo .grafico-filtro { width: 100%; flex-direction: column-reverse; align-items: flex-start; }
+    .barras { --nomes: 6.5rem; column-gap: 10px; }
+    .barras-nome { font-size: 0.84rem; white-space: normal; line-height: 1.25; }
     .faixa-status { flex-direction: column; align-items: stretch; }
     .consulta-titulo { flex-wrap: wrap; row-gap: 4px; }
     .filtros-consultas { grid-template-columns: repeat(2, minmax(0, 1fr)); }

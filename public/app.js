@@ -80,9 +80,10 @@ function diaPorExtenso(iso) {
 
 /**
  * Cópia do que está no banco: horários, consultas (com paciente, tutor, código e total
- * da farmácia) e itens da farmácia. É substituída por inteiro a cada carregarEstado().
+ * da farmácia), itens da farmácia e as vendas do último ano (para o gráfico da Home).
+ * É substituída por inteiro a cada carregarEstado().
  */
-let estado = { horarios: [], consultas: [], produtos: [] };
+let estado = { horarios: [], consultas: [], produtos: [], vendas: [] };
 
 /** Busca no servidor tudo o que as páginas mostram. Lança um Error com a mensagem do problema. */
 async function carregarEstado() {
@@ -437,42 +438,47 @@ function lerFormulario(form) {
 
 /* ---------- Página: Home ---------- */
 
+// Período escolhido em cada gráfico da Home (cada um tem o seu filtro).
+const periodosGraficos = { ocupacao: "dia", vendas: "dia", indicadores: "dia" };
+
 function paginaInicio() {
+    document.querySelectorAll(".filtro-periodo").forEach((filtro) => {
+        const grafico = filtro.dataset.grafico;
+        periodosGraficos[grafico] = lerPeriodoSalvo(grafico);
+        filtro.querySelectorAll("button").forEach((b) => {
+            b.addEventListener("click", () => {
+                periodosGraficos[grafico] = b.dataset.periodo;
+                salvarPeriodo(grafico, b.dataset.periodo);
+                renderInicio();
+            });
+        });
+    });
+
     renderInicio();
     return renderInicio;
 }
 
 function renderInicio() {
     const dia = hoje();
-    const agenda = agendaDoDia(dia);
-    const total = agenda.length;
-    const ocupados = agenda.filter((h) => h.consulta).length;
     const doDia = consultasDoDia(dia);
-    const doDiaCom = (status) => doDia.filter((c) => c.status === status).length;
-    const emAtendimento = comStatus("atendimento");
     const agendadas = comStatus("agendada");
-    const pct = total ? Math.round((ocupados / total) * 100) : 0;
-    const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
 
     $("data-hoje").textContent = diaPorExtenso(dia);
 
-    $("anel").style.setProperty("--p", pct);
-    $("anel-pct").textContent = pct + "%";
-    $("anel").setAttribute("aria-label", `Ocupação da agenda de hoje: ${pct}%`);
-    const partes = [`${doDiaCom("atendimento")} em atendimento`, plural(doDiaCom("agendada"), "agendada", "agendadas")];
-    if (doDiaCom("finalizada")) partes.push(plural(doDiaCom("finalizada"), "finalizada", "finalizadas"));
-    $("ocupacao-texto").replaceChildren(
-        el("strong", `${ocupados} de ${total}`), " horários ocupados hoje",
-        el("br"),
-        partes.join(" · "),
-    );
-
-    desenharPizza();
-
-    $("ind-livres").textContent = agenda.filter((h) => h.situacao === "livre").length;
-    $("ind-atendimento").textContent = emAtendimento.length;
-    $("ind-agendadas").textContent = agendadas.length;
-    $("ind-farmacia").textContent = brl(emAtendimento.reduce((s, c) => s + c.valorConsumido, 0));
+    // Cada gráfico com o seu período: marca o botão escolhido e mostra as datas.
+    const periodos = {};
+    document.querySelectorAll(".filtro-periodo").forEach((filtro) => {
+        const grafico = filtro.dataset.grafico;
+        const p = montarPeriodo(periodosGraficos[grafico]);
+        periodos[grafico] = p;
+        filtro.querySelectorAll("button").forEach((b) => {
+            b.setAttribute("aria-pressed", String(b.dataset.periodo === p.chave));
+        });
+        $(`intervalo-${grafico}`).textContent = intervaloTexto(p.inicio, p.fim);
+    });
+    desenharOcupacao(periodos.ocupacao);
+    desenharVendas(periodos.vendas);
+    desenharIndicadores(periodos.indicadores);
 
     const lista = $("lista-hoje");
     lista.replaceChildren();
@@ -498,105 +504,234 @@ function renderInicio() {
     lista.append(ul);
 }
 
-/* ----- Gráfico de pizza: consultas por status ----- */
+/* ----- Período dos gráficos (Dia, Mês, 3 meses, 6 meses, 1 ano) ----- */
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-const ORDEM_PIZZA = ["agendada", "atendimento", "finalizada"]; // ordem fixa: a cor segue o status
+/** Cada período termina hoje. "texto" completa frases como "horários ocupados ___". */
+const PERIODOS = {
+    dia: { texto: "hoje" },
+    mes: { texto: "nos últimos 30 dias" },
+    "3m": { texto: "nos últimos 3 meses" },
+    "6m": { texto: "nos últimos 6 meses" },
+    ano: { texto: "nos últimos 12 meses" },
+};
+const CHAVE_PERIODO = "clinicavet.periodo."; // + "ocupacao", "vendas" ou "indicadores"
+const MAX_REMEDIOS = 5; // linhas do gráfico de barras
 
-function svgEl(tag, atributos) {
-    const e = document.createElementNS(SVG_NS, tag);
-    for (const [k, v] of Object.entries(atributos)) e.setAttribute(k, v);
-    return e;
+function lerPeriodoSalvo(grafico) {
+    try {
+        const salvo = localStorage.getItem(CHAVE_PERIODO + grafico);
+        return PERIODOS[salvo] ? salvo : "dia";
+    } catch (e) {
+        return "dia";
+    }
 }
 
-const formatoPct = new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 1 });
-
-/** Porcentagem de cada valor sobre o total, com uma casa decimal ("28,6%"). Quantidades iguais dão o mesmo texto. */
-function porcentagens(valores) {
-    const total = valores.reduce((s, v) => s + v, 0);
-    return valores.map((v) => formatoPct.format(total ? v / total : 0));
+function salvarPeriodo(grafico, chave) {
+    try { localStorage.setItem(CHAVE_PERIODO + grafico, chave); } catch (e) { /* sem armazenamento: só não lembra */ }
 }
 
-/** Anel de consultas por status, no mesmo estilo do anel de ocupação. */
-function desenharPizza() {
-    const caixa = $("pizza");
-    const svg = $("pizza-svg");
-    const legenda = $("pizza-legenda");
-    const centroValor = $("pizza-centro-valor");
-    const centroRotulo = $("pizza-centro-rotulo");
-    const contagens = ORDEM_PIZZA.map((s) => comStatus(s).length);
-    const total = contagens.reduce((s, v) => s + v, 0);
-    const pcts = porcentagens(contagens);
-
-    $("pizza-resumo").textContent = total
-        ? "Consultas por status: " + ORDEM_PIZZA.map((s, i) => `${STATUS[s]} ${contagens[i]} (${pcts[i]})`).join(", ") + "."
-        : "Nenhuma consulta ainda.";
-    svg.replaceChildren();
-    legenda.replaceChildren();
-
-    // Centro: total de consultas; com um status em destaque, a porcentagem dele.
-    function mostrarCentro(i) {
-        if (i === null) {
-            centroValor.textContent = String(total);
-            centroRotulo.textContent = total === 1 ? "consulta" : "consultas";
-        } else {
-            centroValor.textContent = pcts[i];
-            centroRotulo.textContent = STATUS[ORDEM_PIZZA[i]].toLowerCase();
-        }
+/**
+ * Datas do período, terminando hoje.
+ *   Dia → hoje · Mês → 30 dias · 3/6 meses → 13/26 semanas · 1 ano → 12 meses do calendário
+ */
+function montarPeriodo(chave) {
+    const fim = hoje();
+    let inicio;
+    if (chave === "ano") {
+        const d = paraData(fim);
+        inicio = isoDoDia(new Date(d.getFullYear(), d.getMonth() - 11, 1));
+    } else {
+        const dias = { dia: 1, mes: 30, "3m": 13 * 7, "6m": 26 * 7 }[chave];
+        inicio = somarDias(fim, -(dias - 1));
     }
-    mostrarCentro(null);
+    return { chave, inicio, fim, dias: diasEntre(inicio, fim) + 1, texto: PERIODOS[chave].texto };
+}
 
-    // Mesmas medidas do anel de ocupação: 180px, espessura de 18% do raio.
-    const C = 100;
-    const ESPESSURA = 18;
-    const R = C - ESPESSURA / 2;
-    svg.append(svgEl("circle", { cx: C, cy: C, r: R, class: "trilho" }));
+/** "Ter, 03/11" para um dia só; "05/10 a 03/11" para um intervalo. */
+const intervaloTexto = (de, ate) => (de === ate ? maiuscula(diaCurto(de)) : `${dataCurta(de)} a ${dataCurta(ate)}`);
 
-    // Destaque: o trecho e a linha da legenda do mesmo status acendem juntos.
-    function destacar(status) {
-        if (status) { caixa.dataset.ativo = status; legenda.dataset.ativo = status; }
-        else { delete caixa.dataset.ativo; delete legenda.dataset.ativo; }
-        svg.querySelectorAll(".fatia").forEach((f) => f.classList.toggle("ativa", f.dataset.status === status));
-        legenda.querySelectorAll("li").forEach((li) => li.classList.toggle("ativa", li.dataset.status === status));
-        mostrarCentro(status ? ORDEM_PIZZA.indexOf(status) : null);
+/** Unidades vendidas de cada remédio entre duas datas (pelo dia do lançamento, no fuso do navegador). */
+function unidadesPorRemedio(de, ate) {
+    const total = new Map();
+    for (const v of estado.vendas || []) {
+        const dia = isoDoDia(new Date(v.lancadoEm));
+        if (dia >= de && dia <= ate) total.set(v.produtoId, (total.get(v.produtoId) || 0) + v.quantidade);
+    }
+    return total;
+}
+
+/* ----- Gráfico 1: ocupação da agenda no período ----- */
+
+function desenharOcupacao(p) {
+    const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+    const total = horarios().length * p.dias;
+    const doPeriodo = estado.consultas.filter((c) => c.data >= p.inicio && c.data <= p.fim);
+    const ocupados = doPeriodo.length; // cada horário de cada dia recebe no máximo uma consulta
+    const com = (status) => doPeriodo.filter((c) => c.status === status).length;
+    const pct = total ? Math.round((ocupados / total) * 100) : 0;
+
+    $("anel").style.setProperty("--p", pct);
+    $("anel-pct").textContent = pct + "%";
+    $("anel").setAttribute("aria-label", `Ocupação da agenda ${p.texto}: ${pct}%`);
+
+    const partes = [];
+    if (com("atendimento") || p.chave === "dia") partes.push(`${com("atendimento")} em atendimento`);
+    partes.push(plural(com("agendada"), "agendada", "agendadas"));
+    if (com("finalizada")) partes.push(plural(com("finalizada"), "finalizada", "finalizadas"));
+    $("ocupacao-texto").replaceChildren(
+        el("strong", `${ocupados} de ${total}`), ` horários ocupados ${p.texto}`,
+        el("br"),
+        partes.join(" · "),
+    );
+}
+
+/* ----- Resumo: os 4 cards, com o período do filtro deles ----- */
+
+/** O dia (no fuso do navegador) de um instante gravado no banco, ou null. */
+const diaDe = (instante) => (instante ? isoDoDia(new Date(instante)) : null);
+const dentro = (dia, p) => dia !== null && dia >= p.inicio && dia <= p.fim;
+
+function desenharIndicadores(p) {
+    const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+    const doPeriodo = estado.consultas.filter((c) => dentro(c.data, p));
+    const horariosNoPeriodo = horarios().length * p.dias;
+
+    // Horários sem consulta (cada horário de cada dia recebe no máximo uma).
+    $("ind-livres").textContent = String(horariosNoPeriodo - doPeriodo.length);
+    $("ind-livres-sub").textContent = `de ${horariosNoPeriodo} ${p.texto}`;
+
+    // Pacientes atendidos: consultas finalizadas no período.
+    $("ind-concluidos").textContent = String(doPeriodo.filter((c) => c.status === "finalizada").length);
+    $("ind-concluidos-sub").textContent = `finalizadas ${p.texto}`;
+
+    // Consultas marcadas no período (pela data em que foram agendadas).
+    $("ind-agendadas").textContent = String(estado.consultas.filter((c) => dentro(diaDe(c.criadaEm), p)).length);
+    $("ind-agendadas-sub").textContent = `marcadas ${p.texto}`;
+
+    // Total vendido na farmácia: quantidade × preço de cada item lançado no período.
+    if (!Array.isArray(estado.vendas)) {
+        $("ind-vendido").textContent = "—";
+        $("ind-vendido-sub").textContent = "reinicie o servidor para ver";
+        return;
+    }
+    const vendas = estado.vendas.filter((v) => dentro(diaDe(v.lancadoEm), p));
+    const valor = vendas.reduce((s, v) => s + v.quantidade * Number(v.precoUnitario || 0), 0);
+    const itens = vendas.reduce((s, v) => s + v.quantidade, 0);
+    $("ind-vendido").textContent = brl(valor);
+    $("ind-vendido-sub").textContent = `${plural(itens, "item", "itens")} ${p.texto}`;
+}
+
+/* ----- Gráfico 2: remédios mais vendidos (uma barra por remédio, no período do filtro) ----- */
+
+/** Passo "redondo" do eixo (1, 2, 5, 10, 20, 50...) para no máximo 4 faixas. */
+function passoDoEixo(maximo) {
+    const alvo = maximo / 4;
+    const potencia = 10 ** Math.floor(Math.log10(Math.max(alvo, 1)));
+    for (const m of [1, 2, 5, 10]) {
+        if (m * potencia >= alvo) return Math.max(1, m * potencia);
+    }
+    return 10 * potencia;
+}
+
+const unidadesVendidas = (n) => `${n} ${n === 1 ? "unidade vendida" : "unidades vendidas"}`;
+const formatoParte = new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 0 });
+
+function desenharVendas(p) {
+    const grade = $("barras");
+    const dica = $("barras-dica");
+    const vazio = $("barras-vazio");
+    const semVendasDoServidor = !Array.isArray(estado.vendas);
+
+    const vendidas = unidadesPorRemedio(p.inicio, p.fim);
+    const total = [...vendidas.values()].reduce((s, n) => s + n, 0);
+
+    // Do mais vendido para o menos vendido (empate: ordem alfabética).
+    const remedios = [...vendidas]
+        .map(([id, unidades]) => {
+            const produto = estado.produtos.find((x) => x.id === id);
+            return { nome: produto ? produto.nomeProduto : `Item #${id}`, unidades };
+        })
+        .sort((a, b) => b.unidades - a.unidades || a.nome.localeCompare(b.nome, "pt-BR"));
+    const linhas = remedios.slice(0, MAX_REMEDIOS);
+
+    $("vendas-total").textContent = total ? `${unidadesVendidas(total)} ${p.texto}` : "";
+    grade.replaceChildren();
+    dica.hidden = true;
+    vazio.hidden = linhas.length > 0;
+    vazio.textContent = semVendasDoServidor
+        ? "O servidor não enviou as vendas: ele está numa versão antiga. Reinicie o servidor para ver o gráfico."
+        : "Nenhum remédio vendido neste período.";
+    vazio.classList.toggle("aviso-grafico", semVendasDoServidor);
+    grade.hidden = linhas.length === 0;
+
+    // Tabela para leitores de tela.
+    const tabela = $("barras-tabela");
+    tabela.replaceChildren(el("caption", `Remédios mais vendidos ${p.texto}`));
+    const cabecalho = el("tr");
+    cabecalho.append(el("th", "Remédio"), el("th", "Unidades vendidas"));
+    tabela.append(cabecalho);
+    for (const r of remedios) {
+        const tr = el("tr");
+        tr.append(el("td", r.nome), el("td", String(r.unidades)));
+        tabela.append(tr);
     }
 
-    const segmentos = contagens.filter((n) => n > 0).length;
-    const respiro = segmentos > 1 ? 0.035 : 0; // pequeno vão entre os trechos (radianos)
-    const ponto = (a) => `${(C + R * Math.cos(a)).toFixed(3)} ${(C + R * Math.sin(a)).toFixed(3)}`;
+    if (!linhas.length) return;
 
-    let angulo = -Math.PI / 2; // começa no topo, sentido horário
-    ORDEM_PIZZA.forEach((status, i) => {
-        const n = contagens[i];
-        if (n > 0) {
-            const fracao = n / total;
-            const fim = angulo + fracao * 2 * Math.PI;
-            let fatia;
-            if (fracao === 1) {
-                fatia = svgEl("circle", { cx: C, cy: C, r: R });
-            } else {
-                const a0 = angulo + respiro / 2;
-                const a1 = fim - respiro / 2;
-                const grande = a1 - a0 > Math.PI ? 1 : 0;
-                fatia = svgEl("path", { d: `M ${ponto(a0)} A ${R} ${R} 0 ${grande} 1 ${ponto(a1)}` });
-            }
-            angulo = fim;
-            fatia.setAttribute("class", `fatia ${status}`);
-            fatia.dataset.status = status;
-            fatia.addEventListener("pointerenter", () => destacar(status));
-            fatia.addEventListener("pointerleave", () => destacar(null));
-            svg.append(fatia);
+    // Escala: o maior valor, arredondado para um número "redondo".
+    const passo = passoDoEixo(linhas[0].unidades);
+    const topo = Math.ceil(linhas[0].unidades / passo) * passo;
+    const pct = (v) => `${(v / topo) * 100}%`;
+
+    // Linhas verticais da grade, atrás das barras.
+    const fundo = el("div", undefined, "barras-grade");
+    fundo.style.gridRow = `1 / span ${linhas.length}`;
+    for (let v = 0; v <= topo; v += passo) {
+        const linha = el("span");
+        linha.style.left = pct(v);
+        fundo.append(linha);
+    }
+    grade.append(fundo);
+
+    linhas.forEach((r, i) => {
+        const nome = el("div", r.nome, "barras-nome");
+        nome.style.gridRow = String(i + 1);
+        const grupo = el("div", undefined, "barras-grupo");
+        grupo.style.gridRow = String(i + 1);
+        const faixa = el("div", undefined, "barras-faixa");
+        const barra = el("span", undefined, "barra-h");
+        barra.style.width = pct(r.unidades);
+        faixa.append(barra, el("span", String(r.unidades), "barras-valor"));
+        grupo.append(faixa);
+
+        // Passar o mouse (ou tocar) na linha mostra as unidades e a parte do total.
+        const mostrar = () => {
+            dica.replaceChildren(
+                el("strong", r.nome),
+                el("p", unidadesVendidas(r.unidades), "valor"),
+                el("p", `${formatoParte.format(r.unidades / total)} do total · ${intervaloTexto(p.inicio, p.fim)}`, "sub"),
+            );
+            dica.hidden = false;
+            const caixa = grade.getBoundingClientRect();
+            const alvo = grupo.getBoundingClientRect();
+            dica.style.top = `${alvo.bottom - caixa.top + 6}px`;
+        };
+        for (const alvo of [nome, grupo]) {
+            alvo.addEventListener("pointerenter", mostrar);
+            alvo.addEventListener("pointerleave", () => { dica.hidden = true; });
         }
-
-        const li = el("li");
-        li.dataset.status = status;
-        const nome = el("span", undefined, "pizza-nome");
-        nome.append(el("i", undefined, `amostra ${status}`), STATUS[status]);
-        li.append(nome, el("span", String(n), "pizza-qtd"), el("span", pcts[i], "pizza-pct"));
-        li.addEventListener("pointerenter", () => destacar(status));
-        li.addEventListener("pointerleave", () => destacar(null));
-        legenda.append(li);
+        grade.append(nome, grupo);
     });
+
+    // Números do eixo, embaixo das barras.
+    const eixo = el("div", undefined, "barras-eixo");
+    eixo.style.gridRow = String(linhas.length + 1);
+    for (let v = 0; v <= topo; v += passo) {
+        const t = el("span", String(v));
+        t.style.left = pct(v);
+        eixo.append(t);
+    }
+    grade.append(eixo);
 }
 
 /* ---------- Página: Agenda ---------- */

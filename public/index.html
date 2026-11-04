@@ -45,8 +45,18 @@
                     <div class="grafico-topo">
                         <h2>Ocupação da agenda</h2>
                     </div>
+                    <div class="grafico-filtro">
+                        <div class="segmentado filtro-periodo" data-grafico="ocupacao" role="group" aria-label="Período: ocupação da agenda">
+                            <button type="button" data-periodo="dia" aria-pressed="true">Dia</button>
+                            <button type="button" data-periodo="mes" aria-pressed="false">Mês</button>
+                            <button type="button" data-periodo="3m" aria-pressed="false">3 meses</button>
+                            <button type="button" data-periodo="6m" aria-pressed="false">6 meses</button>
+                            <button type="button" data-periodo="ano" aria-pressed="false">1 ano</button>
+                        </div>
+                        <span class="grafico-intervalo" id="intervalo-ocupacao" aria-live="polite"></span>
+                    </div>
                     <div class="ocupacao">
-                        <div class="anel" id="anel" role="img" aria-label="Ocupação da agenda de hoje">
+                        <div class="anel" id="anel" role="img" aria-label="Ocupação da agenda">
                             <div class="anel-valor"><span id="anel-pct">0%</span><small>ocupação</small></div>
                         </div>
                         <p id="ocupacao-texto"><strong>0 de 10</strong> horários ocupados hoje</p>
@@ -55,27 +65,48 @@
 
                 <div class="cartao grafico-cartao">
                     <div class="grafico-topo">
-                        <h2>Consultas por status</h2>
+                        <h2>Remédios mais vendidos</h2>
+                        <span class="grafico-sub" id="vendas-total"></span>
                     </div>
-                    <div class="pizza-corpo">
-                        <div class="pizza" id="pizza">
-                            <svg viewBox="0 0 200 200" id="pizza-svg" role="img" aria-labelledby="pizza-resumo"></svg>
-                            <!-- Centro: total de consultas; ao passar o mouse, a porcentagem do status -->
-                            <div class="anel-valor pizza-centro" aria-live="polite">
-                                <span id="pizza-centro-valor">0</span><small id="pizza-centro-rotulo">consultas</small>
-                            </div>
+                    <div class="grafico-filtro">
+                        <div class="segmentado filtro-periodo" data-grafico="vendas" role="group" aria-label="Período: remédios mais vendidos">
+                            <button type="button" data-periodo="dia" aria-pressed="true">Dia</button>
+                            <button type="button" data-periodo="mes" aria-pressed="false">Mês</button>
+                            <button type="button" data-periodo="3m" aria-pressed="false">3 meses</button>
+                            <button type="button" data-periodo="6m" aria-pressed="false">6 meses</button>
+                            <button type="button" data-periodo="ano" aria-pressed="false">1 ano</button>
                         </div>
-                        <ul class="pizza-legenda" id="pizza-legenda" aria-label="Legenda: consultas por status"></ul>
+                        <span class="grafico-intervalo" id="intervalo-vendas" aria-live="polite"></span>
                     </div>
-                    <p class="sr-only" id="pizza-resumo"></p>
+                    <div class="barras-caixa">
+                        <div class="barras" id="barras" aria-hidden="true"></div>
+                        <div class="grafico-dica" id="barras-dica" hidden></div>
+                        <p class="barras-vazio" id="barras-vazio" hidden></p>
+                    </div>
+                    <table class="sr-only" id="barras-tabela"></table>
                 </div>
             </section>
 
-            <section class="indicadores" aria-label="Resumo">
-                <div class="indicador"><span>Horários livres hoje</span><strong id="ind-livres">0</strong></div>
-                <div class="indicador"><span>Em atendimento</span><strong id="ind-atendimento">0</strong></div>
-                <div class="indicador"><span>Consultas agendadas</span><strong id="ind-agendadas">0</strong></div>
-                <div class="indicador"><span>Farmácia em aberto</span><strong id="ind-farmacia">R$ 0,00</strong></div>
+            <section class="painel-resumo" aria-labelledby="resumo-titulo">
+                <div class="resumo-topo">
+                    <h2 id="resumo-titulo">Resumo</h2>
+                    <div class="grafico-filtro">
+                        <span class="grafico-intervalo" id="intervalo-indicadores" aria-live="polite"></span>
+                        <div class="segmentado filtro-periodo" data-grafico="indicadores" role="group" aria-label="Período: resumo">
+                            <button type="button" data-periodo="dia" aria-pressed="true">Dia</button>
+                            <button type="button" data-periodo="mes" aria-pressed="false">Mês</button>
+                            <button type="button" data-periodo="3m" aria-pressed="false">3 meses</button>
+                            <button type="button" data-periodo="6m" aria-pressed="false">6 meses</button>
+                            <button type="button" data-periodo="ano" aria-pressed="false">1 ano</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="indicadores">
+                    <div class="indicador"><span>Horários livres</span><strong id="ind-livres">0</strong><small id="ind-livres-sub"></small></div>
+                    <div class="indicador"><span>Atendimentos concluídos</span><strong id="ind-concluidos">0</strong><small id="ind-concluidos-sub"></small></div>
+                    <div class="indicador"><span>Consultas agendadas</span><strong id="ind-agendadas">0</strong><small id="ind-agendadas-sub"></small></div>
+                    <div class="indicador"><span>Total vendido</span><strong id="ind-vendido">R$ 0,00</strong><small id="ind-vendido-sub"></small></div>
+                </div>
             </section>
 
             <section class="secao">

@@ -23,7 +23,7 @@ import com.clinica.service.ClinicaService;
 /**
  * API que o site (public/app.js) usa para ler e gravar no banco.
  *
- *   GET    /api/estado                    horários, consultas e itens da farmácia
+ *   GET    /api/estado                    horários, consultas, itens e vendas da farmácia
  *   POST   /api/consultas                 nova consulta (Agendada)
  *   PUT    /api/consultas/{id}            editar tutor, paciente, sintomas, data e horário
  *   POST   /api/consultas/{id}/iniciar    Agendada → Em atendimento

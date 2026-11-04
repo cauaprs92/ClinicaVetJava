@@ -94,12 +94,13 @@ public class ClinicaService {
 
     /* ---------- Consultas ao banco ---------- */
 
-    /** Horários, consultas e itens da farmácia, lidos juntos para a tela ficar coerente. */
+    /** Horários, consultas, itens e vendas da farmácia, lidos juntos para a tela ficar coerente. */
     public EstadoClinica carregarEstado() throws SQLException {
         return consultar(conexao -> new EstadoClinica(
                 new HorarioDAO(conexao).listar(),
                 new ConsultaDAO(conexao).listar(),
-                new ProdutoDAO(conexao).listar()));
+                new ProdutoDAO(conexao).listar(),
+                new ConsumoDAO(conexao).listarVendasRecentes()));
     }
 
     /* ---------- Consultas da clínica ---------- */
